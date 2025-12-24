@@ -19,10 +19,7 @@ fn setup_camera(mut commands: Commands) {
         Camera3d::default(),
         MainCamera,
         Transform::from_xyz(0.0, 8.0, 15.0).looking_at(Vec3::Y * 2.0, Vec3::Y),
-        Projection::Perspective {
-            fov: 60.0_f32.to_radians(),
-            ..default()
-        },
+        Projection::Perspective(default()),
     ));
 }
 
@@ -39,7 +36,6 @@ fn camera_follow(
     };
 
     let vehicle_pos = vehicle_transform.translation;
-    let vehicle_forward = vehicle_transform.forward();
 
     // Camera position behind and above the vehicle
     let offset = Vec3::new(0.0, 6.0, 12.0);

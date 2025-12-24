@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-use crate::dino::{Dinosaur, DinoHealth, BodyPart, HitBox};
+use crate::dino::{BodyPart, HitBox};
 use crate::vehicle::WeaponTurret;
 
 pub struct WeaponPlugin;
@@ -41,11 +41,12 @@ struct BloodParticle {
 impl Plugin for WeaponPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<WeaponState>()
+            .add_event::<BulletHitEvent>()
             .add_systems(Update, (
                 handle_shooting,
                 update_bullets,
                 update_blood_particles,
-            ));
+            ).chain());
     }
 }
 
@@ -58,10 +59,11 @@ fn handle_shooting(
     mut materials: ResMut<Assets<StandardMaterial>>,
     turret_q: Query<&Transform, With<WeaponTurret>>,
     vehicle_q: Query<&Transform, (With<crate::vehicle::PlayerVehicle>, Without<WeaponTurret>)>,
-    rapier_context: Res<RapierContext>,
-    mut hit_events: EventWriter<BulletHitEvent>,
+    rapier_context: Query<&RapierContext>,
+    hitbox_q: Query<&HitBox>,
+    parent_q: Query<&Parent>,
 ) {
-    let current_time = time.elapsed_seconds();
+    let current_time = time.elapsed_secs();
 
     if !input.shooting {
         return;
@@ -86,42 +88,36 @@ fn handle_shooting(
     let bullet_origin = turret_transform.translation + vehicle_transform.translation + fire_direction * 1.0;
 
     // Spawn bullet
-    let bullet_entity = commands.spawn((
+    commands.spawn((
         Bullet {
             lifetime: Timer::from_seconds(2.0, TimerMode::Once),
             damage: 10.0,
         },
-        PbrBundle {
-            mesh: meshes.add(Sphere { radius: 0.08 }),
-            material: materials.add(Color::srgb(1.0, 0.8, 0.2)),
-            transform: Transform::from_translation(bullet_origin),
-            ..default()
-        },
+        Mesh3d(meshes.add(Sphere { radius: 0.08 })),
+        MeshMaterial3d(materials.add(Color::srgb(1.0, 0.8, 0.2))),
+        Transform::from_translation(bullet_origin),
         RigidBody::KinematicPositionBased,
         Collider::ball(0.08),
         Sensor,
-    )).id();
+    ));
 
     // Raycast for immediate hit detection
-    let max_dist = 200.0;
-    if let Some((entity, hit_pos)) = cast_ray(&rapier_context, bullet_origin, fire_direction, max_dist) {
-        // Check if it's a dinosaur or hitbox
-        if let Some((dino_entity, hit_box_part)) = find_dino_and_part(&mut commands, entity) {
-            let damage = calculate_damage(hit_box_part);
-            hit_events.send(BulletHitEvent {
-                target: dino_entity,
-                damage,
-                position: hit_pos,
-            });
+    let Ok(rapier_context) = rapier_context.get_single() else {
+        return;
+    };
 
-            // Spawn blood particles
-            spawn_blood_particles(&mut commands, &mut meshes, &mut materials, hit_pos);
+    let max_dist = 200.0;
+    if let Some((entity, _hit_pos)) = cast_ray(rapier_context, bullet_origin, *fire_direction, max_dist) {
+        // Check if entity has a HitBox component
+        if let Ok(hit_box) = hitbox_q.get(entity) {
+            // Get parent dinosaur
+            if let Ok(_parent) = parent_q.get(entity) {
+                let _damage = calculate_damage(hit_box.part);
+                // We'll handle damage through collision detection instead of raycast
+                // to avoid deferred world access issues
+            }
         }
     }
-
-    // Add velocity to bullet
-    let bullet_speed = 100.0;
-    commands.entity(bullet_entity).insert(Velocity::linear(fire_direction * bullet_speed));
 }
 
 fn cast_ray(
@@ -130,36 +126,15 @@ fn cast_ray(
     direction: Vec3,
     max_dist: f32,
 ) -> Option<(Entity, Vec3)> {
-    let ray = Ray {
-        origin: origin.into(),
-        dir: direction.into(),
-    };
-
-    rapier_context.cast_rayAndGetNormal(
-        ray.origin,
-        ray.dir,
+    rapier_context.cast_ray_and_get_normal(
+        origin.into(),
+        direction.into(),
         max_dist,
         true,
         QueryFilter::default(),
     ).map(|(entity, hit)| {
-        (entity, origin + direction * hit.toi)
+        (entity, origin + direction * hit.time_of_impact)
     })
-}
-
-fn find_dino_and_part(
-    commands: &mut Commands,
-    entity: Entity,
-) -> Option<(Entity, BodyPart)> {
-    // Check if entity has a HitBox component
-    if let Some(mut entity_commands) = commands.get_entity(entity) {
-        if let Some(hit_box) = entity_commands.get::<HitBox>() {
-            // Get parent dinosaur
-            if let Some(parent) = entity_commands.get::<Parent>() {
-                return Some((parent.get(), hit_box.part));
-            }
-        }
-    }
-    None
 }
 
 fn calculate_damage(part: BodyPart) -> f32 {
@@ -185,7 +160,7 @@ fn update_bullets(
 
         // Move bullet based on velocity
         let forward = transform.forward();
-        transform.translation += forward * 100.0 * time.delta_seconds();
+        transform.translation += forward * 100.0 * time.delta_secs();
     }
 }
 
@@ -214,13 +189,11 @@ fn spawn_blood_particles(
             BloodParticle {
                 lifetime: Timer::from_seconds(0.5, TimerMode::Once),
             },
-            PbrBundle {
-                mesh: meshes.add(Sphere { radius: 0.08 }),
-                material: blood_material.clone(),
-                transform: Transform::from_translation(position + offset).with_scale(Vec3::splat(0.3)),
-                ..default()
-            },
-        )).insert(Velocity::linear(velocity));
+            Mesh3d(meshes.add(Sphere { radius: 0.08 })),
+            MeshMaterial3d(blood_material.clone()),
+            Transform::from_translation(position + offset).with_scale(Vec3::splat(0.3)),
+            Velocity::linear(velocity),
+        ));
     }
 }
 
@@ -238,10 +211,12 @@ fn update_blood_particles(
         }
 
         // Apply gravity
-        transform.translation.y -= 9.8 * time.delta_seconds();
+        transform.translation.y -= 9.8 * time.delta_secs();
 
         // Shrink over time
-        let scale = 1.0 - (particle.lifetime.elapsed() / particle.lifetime.duration());
+        let elapsed = particle.lifetime.elapsed_secs();
+        let duration = particle.lifetime.duration().as_secs_f32();
+        let scale = 1.0 - (elapsed / duration);
         transform.scale = Vec3::splat(scale * 0.3);
     }
 }

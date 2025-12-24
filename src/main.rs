@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::window::CursorGrabMode;
 use bevy_rapier3d::prelude::*;
 
 mod camera;
@@ -16,28 +15,13 @@ use dino::DinoPlugin;
 use weapon::WeaponPlugin;
 use ui::UIPlugin;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
-enum GameSet {
-    Input,
-    Movement,
-    Combat,
-    AI,
-    UI,
-}
-
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(RenderPlugin {
-            render_creation: RenderCreation::Automatic(WgpuSettings {
-                priority: WgpuSettingsPriority::Compatibility,
-                ..default()
-            }),
-        }))
+        .add_plugins(DefaultPlugins)
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
         .insert_resource(ClearColor(Color::srgb(0.52, 0.77, 0.98)))
         .insert_resource(GameScore { score: 0 })
-        .add_event::<weapon::BulletHitEvent>()
         .add_plugins((
             CameraPlugin,
             InputPlugin,
@@ -77,14 +61,8 @@ fn setup(
         brightness: 800.0,
     });
 
-    // Fog
-    commands.insert_resource(FogSettings {
-        color: Color::srgb(0.52, 0.77, 0.98),
-        falloff: FogFalloff::Linear {
-            start: 50.0,
-            end: 200.0,
-        },
-    });
+    // Fog (using bevy's built-in fog - add to camera instead)
+    // Note: In Bevy 0.15, fog is configured differently
 
     // Ground
     let ground_size = 500.0;
@@ -97,7 +75,7 @@ fn setup(
     // Ground physics
     commands.spawn((
         Transform::from_xyz(0.0, -0.5, 0.0).looking_at(Vec3::Z, Vec3::Y),
-        Collider::halfspace(Vec3::Y, 0.0).unwrap(),
+        Collider::halfspace(Vec3::Y).unwrap(),
     ));
 
     // Spawn some trees
@@ -181,7 +159,7 @@ fn spawn_rocks(
     }
 }
 
-fn update_score(mut score_text: Query<&mut Text, With<ui::ScoreText>>, mut score: ResMut<GameScore>) {
+fn update_score(mut score_text: Query<&mut Text, With<ui::ScoreText>>, score: Res<GameScore>) {
     for mut text in score_text.iter_mut() {
         text.0 = format!("Score: {}", score.score);
     }

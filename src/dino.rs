@@ -67,15 +67,15 @@ fn spawn_dinosaurs(
     let mut rng = rand::thread_rng();
 
     // Spawn dinosaurs
-    for i in 0..15 {
+    for _ in 0..15 {
         let species = match rng.gen_range(0..3) {
             0 => DinoSpecies::Triceratops,
             1 => DinoSpecies::Velociraptor,
             _ => DinoSpecies::Brachiosaurus,
         };
 
-        let x = rng.gen_range(-150.0..150.0);
-        let z = rng.gen_range(-150.0..150.0);
+        let x: f32 = rng.gen_range(-150.0..150.0);
+        let z: f32 = rng.gen_range(-150.0..150.0);
 
         // Don't spawn too close to origin
         if x.abs() < 20.0 && z.abs() < 20.0 {
@@ -128,8 +128,7 @@ fn spawn_dinosaur(
         MeshMaterial3d(body_material.clone()),
         Transform::from_xyz(0.0, size.y * 0.5, 0.0),
         HitBox { part: BodyPart::Body },
-        Parent(dino_entity),
-    ));
+    )).set_parent(dino_entity);
 
     // Head
     let head_size = size.x * 0.4;
@@ -144,8 +143,7 @@ fn spawn_dinosaur(
         MeshMaterial3d(head_material.clone()),
         Transform::from_translation(head_pos),
         HitBox { part: BodyPart::Head },
-        Parent(dino_entity),
-    ));
+    )).set_parent(dino_entity);
 
     // Legs
     let leg_positions = [
@@ -166,13 +164,12 @@ fn spawn_dinosaur(
             MeshMaterial3d(leg_material.clone()),
             Transform::from_xyz(leg_pos.0, leg_height * 0.5, leg_pos.2),
             HitBox { part: BodyPart::Legs },
-            Parent(dino_entity),
-        ));
+        )).set_parent(dino_entity);
     }
 }
 
 fn update_dino_ai(
-    time: Res<Time>,
+    _time: Res<Time>,
     mut dino_q: Query<(&mut DinoAI, &Transform)>,
     vehicle_q: Query<&Transform, (With<super::vehicle::PlayerVehicle>, Without<Dinosaur>)>,
 ) {
@@ -218,7 +215,7 @@ fn update_dino_movement(
     time: Res<Time>,
     mut dino_q: Query<(&mut Transform, &DinoAI)>,
 ) {
-    let dt = time.delta_seconds();
+    let dt = time.delta_secs();
 
     for (mut transform, ai) in dino_q.iter_mut() {
         if ai.state == AIState::Dead || ai.state == AIState::Idle {
@@ -251,9 +248,9 @@ fn update_dino_movement(
 
 fn check_dino_death(
     mut commands: Commands,
-    dino_q: Query<(Entity, &DinoHealth, &Transform)>,
+    dino_q: Query<(Entity, &DinoHealth)>,
 ) {
-    for (entity, health, transform) in dino_q.iter() {
+    for (entity, health) in dino_q.iter() {
         if health.current <= 0.0 {
             commands.entity(entity).despawn_recursive();
         }

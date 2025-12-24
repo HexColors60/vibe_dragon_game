@@ -111,7 +111,7 @@ fn update_health_bars(
 }
 
 fn handle_bullet_hits(
-    mut commands: Commands,
+    _commands: Commands,
     mut events: EventReader<BulletHitEvent>,
     mut dino_q: Query<&mut DinoHealth>,
     mut score: ResMut<GameScore>,

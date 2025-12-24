@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
+use bevy::math::Mat3;
 use crate::input::PlayerInput;
 
 pub struct VehiclePlugin;
@@ -47,7 +48,7 @@ fn spawn_vehicle(
         RigidBody::KinematicPositionBased,
         Collider::cuboid(2.0, 1.0, 4.0),
         Friction::new(0.8),
-        Mass::new(1500.0),
+        AdditionalMassProperties::Mass(1500.0),
     )).id();
 
     // Vehicle body
@@ -55,16 +56,14 @@ fn spawn_vehicle(
         Mesh3d(meshes.add(Cuboid::new(2.0, 0.8, 4.0))),
         MeshMaterial3d(materials.add(body_color)),
         Transform::from_xyz(0.0, 0.5, 0.0),
-        Parent(vehicle_entity),
-    ));
+    )).set_parent(vehicle_entity);
 
     // Cabin
     commands.spawn((
         Mesh3d(meshes.add(Cuboid::new(1.8, 0.7, 2.0))),
         MeshMaterial3d(materials.add(cabin_color)),
         Transform::from_xyz(0.0, 1.2, -0.5),
-        Parent(vehicle_entity),
-    ));
+    )).set_parent(vehicle_entity);
 
     // Wheels
     let wheel_positions = [
@@ -80,8 +79,7 @@ fn spawn_vehicle(
             MeshMaterial3d(materials.add(wheel_color)),
             Transform::from_xyz(pos.0, pos.1, pos.2)
                 .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)),
-            Parent(vehicle_entity),
-        ));
+        )).set_parent(vehicle_entity);
     }
 
     // Weapon mount base
@@ -89,8 +87,7 @@ fn spawn_vehicle(
         Mesh3d(meshes.add(Cylinder::new(0.2, 0.3))),
         MeshMaterial3d(materials.add(gun_color)),
         Transform::from_xyz(0.0, 1.8, 0.0),
-        Parent(vehicle_entity),
-    ));
+    )).set_parent(vehicle_entity);
 
     // Machine gun barrel (will rotate to face mouse direction)
     commands.spawn((
@@ -99,8 +96,7 @@ fn spawn_vehicle(
         MeshMaterial3d(materials.add(gun_color)),
         Transform::from_xyz(0.0, 1.9, 0.0)
             .with_rotation(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)),
-        Parent(vehicle_entity),
-    ));
+    )).set_parent(vehicle_entity);
 }
 
 #[derive(Component)]
@@ -115,7 +111,7 @@ fn handle_vehicle_movement(
         return;
     };
 
-    let dt = time.delta_seconds();
+    let dt = time.delta_secs();
 
     // Acceleration
     if input.move_forward {
@@ -155,7 +151,6 @@ fn handle_vehicle_movement(
 fn rotate_weapon_turret(
     mut turret_q: Query<&mut Transform, (With<WeaponTurret>, Without<PlayerVehicle>)>,
     vehicle_q: Query<&Transform, (With<PlayerVehicle>, Without<WeaponTurret>)>,
-    camera_q: Query<&Transform, (Without<WeaponTurret>, Without<PlayerVehicle>)>,
     window_q: Query<&Window>,
     camera_3d_q: Query<(&Camera, &GlobalTransform)>,
 ) {
@@ -181,7 +176,7 @@ fn rotate_weapon_turret(
     };
 
     // Raycast from camera
-    let Some(ray) = camera.viewport_to_world(camera_transform, cursor_pos) else {
+    let Ok(ray) = camera.viewport_to_world(camera_transform, cursor_pos) else {
         return;
     };
 
@@ -203,7 +198,7 @@ fn rotate_weapon_turret(
             let right = forward.cross(up).normalize();
             let new_up = right.cross(forward).normalize();
 
-            turret_transform.rotation = Quat::from_mat3(&glam::Mat3::from_cols(
+            turret_transform.rotation = Quat::from_mat3(&Mat3::from_cols(
                 right,
                 new_up,
                 -forward,
