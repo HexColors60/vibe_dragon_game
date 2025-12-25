@@ -1,0 +1,4 @@
+Right mouse button click lock on target, target show red circle. Press space key shoot to locked target.
+Add esc key to pause and show menu, menu have quit program button.
+恐龍 always 顯示血條在頭頂 UI.
+QE key turn 可旋轉機槍 dir.
