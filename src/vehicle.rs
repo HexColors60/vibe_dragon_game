@@ -25,6 +25,7 @@ impl Plugin for VehiclePlugin {
                 handle_vehicle_movement,
                 rotate_weapon_turret,
                 update_target_lock,
+                update_indicator_position,
             ));
     }
 }
@@ -226,7 +227,6 @@ fn update_target_lock(
     mut target_lock: ResMut<TargetLock>,
     vehicle_q: Query<&Transform, With<crate::vehicle::PlayerVehicle>>,
     dino_q: Query<(Entity, &GlobalTransform), With<Dinosaur>>,
-    mut indicator_q: Query<&mut Transform, With<TargetLockIndicator>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
@@ -274,10 +274,16 @@ fn update_target_lock(
             target_lock.lock_position = None;
         }
     }
+}
 
+fn update_indicator_position(
+    target_lock: Res<TargetLock>,
+    dino_q: Query<&GlobalTransform, With<Dinosaur>>,
+    mut indicator_q: Query<&mut Transform, With<TargetLockIndicator>>,
+) {
     // Update indicator position
     if let Some(locked_entity) = target_lock.locked_entity {
-        if let Ok((_, dino_transform)) = dino_q.get(locked_entity) {
+        if let Ok(dino_transform) = dino_q.get(locked_entity) {
             for mut transform in indicator_q.iter_mut() {
                 let pos = dino_transform.translation();
                 transform.translation = Vec3::new(pos.x, pos.y + 0.5, pos.z);
