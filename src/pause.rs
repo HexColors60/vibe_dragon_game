@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use crate::input::PlayerInput;
+use crate::dino::RespawnDinosEvent;
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum GameState {
@@ -13,17 +14,25 @@ pub struct PausePlugin;
 impl Plugin for PausePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>()
+            .add_event::<RestartGameEvent>()
             .add_systems(OnEnter(GameState::Paused), spawn_pause_menu)
             .add_systems(OnExit(GameState::Paused), despawn_pause_menu)
-            .add_systems(Update, (handle_pause_input.run_if(in_state(GameState::Playing)), handle_pause_menu_input.run_if(in_state(GameState::Paused))));
+            .add_systems(Update, (handle_pause_input.run_if(in_state(GameState::Playing)), handle_pause_menu_input.run_if(in_state(GameState::Paused))))
+            .add_systems(Update, handle_restart_game);
     }
 }
+
+#[derive(Event)]
+pub struct RestartGameEvent;
 
 #[derive(Component)]
 pub struct PauseMenu;
 
 #[derive(Component)]
 pub struct ResumeButton;
+
+#[derive(Component)]
+pub struct RestartButton;
 
 #[derive(Component)]
 pub struct QuitButton;
@@ -92,6 +101,32 @@ fn spawn_pause_menu(mut commands: Commands) {
             ));
         });
 
+        // Restart button
+        parent.spawn((
+            RestartButton,
+            Button {
+                ..default()
+            },
+            Node {
+                width: Val::Px(200.0),
+                height: Val::Px(50.0),
+                margin: UiRect::bottom(Val::Px(20.0)),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgb(0.5, 0.5, 0.2)),
+        )).with_children(|parent| {
+            parent.spawn((
+                Text::new("Restart"),
+                TextFont {
+                    font_size: 24.0,
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+            ));
+        });
+
         // Quit button
         parent.spawn((
             QuitButton,
@@ -143,12 +178,14 @@ fn handle_pause_input(
 
 fn handle_pause_menu_input(
     mut next_state: ResMut<NextState<GameState>>,
+    mut restart_events: EventWriter<RestartGameEvent>,
     mut interaction_q: Query<
         (&Interaction, &Parent),
         (With<Button>, Changed<Interaction>),
     >,
     children_q: Query<&Children>,
     resume_button_q: Query<&ResumeButton>,
+    restart_button_q: Query<&RestartButton>,
     quit_button_q: Query<&QuitButton>,
     mut app_exit: EventWriter<bevy::app::AppExit>,
 ) {
@@ -159,11 +196,53 @@ fn handle_pause_menu_input(
                 if resume_button_q.get(child).is_ok() {
                     next_state.set(GameState::Playing);
                     return;
+                } else if restart_button_q.get(child).is_ok() {
+                    restart_events.send(RestartGameEvent);
+                    next_state.set(GameState::Playing);
+                    return;
                 } else if quit_button_q.get(child).is_ok() {
                     app_exit.send(bevy::app::AppExit::Success);
                     return;
                 }
             }
         }
+    }
+}
+
+fn handle_restart_game(
+    mut events: EventReader<RestartGameEvent>,
+    mut commands: Commands,
+    dino_q: Query<Entity, With<crate::dino::Dinosaur>>,
+    bullet_q: Query<Entity, With<crate::weapon::Bullet>>,
+    particle_q: Query<Entity, With<crate::weapon::BloodParticle>>,
+    mut score: ResMut<crate::GameScore>,
+    mut target_lock: ResMut<crate::input::TargetLock>,
+    mut respawn_events: EventWriter<RespawnDinosEvent>,
+) {
+    for _event in events.read() {
+        // Reset score
+        score.score = 0;
+
+        // Reset target lock
+        target_lock.locked_entity = None;
+        target_lock.lock_position = None;
+
+        // Despawn all dinosaurs
+        for entity in dino_q.iter() {
+            commands.entity(entity).despawn_recursive();
+        }
+
+        // Despawn all bullets
+        for entity in bullet_q.iter() {
+            commands.entity(entity).despawn_recursive();
+        }
+
+        // Despawn all particles
+        for entity in particle_q.iter() {
+            commands.entity(entity).despawn_recursive();
+        }
+
+        // Respawn dinosaurs
+        respawn_events.send(RespawnDinosEvent);
     }
 }

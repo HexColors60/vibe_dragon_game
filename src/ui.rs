@@ -1,7 +1,5 @@
 use bevy::prelude::*;
 use crate::dino::{Dinosaur, DinoHealth};
-use crate::weapon::BulletHitEvent;
-use crate::GameScore;
 use crate::pause::GameState;
 
 pub struct UIPlugin;
@@ -23,7 +21,6 @@ impl Plugin for UIPlugin {
         app.add_systems(Startup, setup_ui)
             .add_systems(Update, (
                 update_health_bars,
-                handle_bullet_hits,
             ).run_if(in_state(GameState::Playing)));
     }
 }
@@ -68,17 +65,14 @@ fn update_health_bars(
 
             // Position above dinosaur
             let pos = global_transform.translation();
-            transform.translation = Vec3::new(pos.x, pos.y + 3.0, pos.z);
+            transform.translation = Vec3::new(pos.x, pos.y + 3.5, pos.z);
 
             // Scale based on health
             transform.scale.x = health_percent;
 
-            // Change color based on health
-            if health_percent < 0.3 {
-                // Red for low health
-            }
+            // Update color based on health (we'd need to access the material here)
         } else {
-            // Dino is dead, remove health bar
+            // Dino is dead or health bar parent is invalid, remove health bar
             commands.entity(parent.get()).despawn_recursive();
         }
     }
@@ -117,23 +111,5 @@ fn update_health_bars(
             Transform::from_xyz(pos.x - (2.0 * (1.0 - health_percent)) / 2.0, pos.y + 3.5, pos.z + 0.01),
             GlobalTransform::default(),
         )).set_parent(entity);
-    }
-}
-
-fn handle_bullet_hits(
-    _commands: Commands,
-    mut events: EventReader<BulletHitEvent>,
-    mut dino_q: Query<&mut DinoHealth>,
-    mut score: ResMut<GameScore>,
-) {
-    for event in events.read() {
-        if let Ok(mut health) = dino_q.get_mut(event.target) {
-            health.current -= event.damage;
-
-            if health.current <= 0.0 {
-                // Dino killed, add score
-                score.score += 100;
-            }
-        }
     }
 }

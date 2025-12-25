@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-use crate::dino::{BodyPart, HitBox};
+use crate::dino::{BodyPart, HitBox, Dinosaur};
 use crate::vehicle::WeaponTurret;
 use crate::input::TargetLock;
+use crate::pause::GameState;
 
 pub struct WeaponPlugin;
 
@@ -11,6 +12,7 @@ pub struct BulletHitEvent {
     pub target: Entity,
     pub damage: f32,
     pub position: Vec3,
+    pub hit_part: BodyPart,
 }
 
 #[derive(Resource)]
@@ -29,14 +31,14 @@ impl Default for WeaponState {
 }
 
 #[derive(Component)]
-struct Bullet {
-    lifetime: Timer,
-    damage: f32,
+pub struct Bullet {
+    pub lifetime: Timer,
+    pub damage: f32,
 }
 
 #[derive(Component)]
-struct BloodParticle {
-    lifetime: Timer,
+pub struct BloodParticle {
+    pub lifetime: Timer,
 }
 
 impl Plugin for WeaponPlugin {
@@ -46,8 +48,9 @@ impl Plugin for WeaponPlugin {
             .add_systems(Update, (
                 handle_shooting,
                 update_bullets,
+                check_bullet_collisions,
                 update_blood_particles,
-            ).chain());
+            ).chain().run_if(in_state(GameState::Playing)));
     }
 }
 
@@ -60,9 +63,6 @@ fn handle_shooting(
     mut materials: ResMut<Assets<StandardMaterial>>,
     turret_q: Query<&Transform, With<WeaponTurret>>,
     vehicle_q: Query<&Transform, (With<crate::vehicle::PlayerVehicle>, Without<WeaponTurret>)>,
-    rapier_context: Query<&RapierContext>,
-    hitbox_q: Query<&HitBox>,
-    parent_q: Query<&Parent>,
     target_lock: Res<TargetLock>,
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
@@ -97,7 +97,8 @@ fn handle_shooting(
     let fire_direction = -turret_transform.forward();
     let bullet_origin = turret_transform.translation + vehicle_transform.translation + fire_direction * 1.0;
 
-    // Spawn bullet
+    // Spawn bullet with velocity
+    let bullet_speed = 100.0;
     commands.spawn((
         Bullet {
             lifetime: Timer::from_seconds(2.0, TimerMode::Once),
@@ -109,58 +110,16 @@ fn handle_shooting(
         RigidBody::KinematicPositionBased,
         Collider::ball(0.08),
         Sensor,
+        Velocity::linear(fire_direction * bullet_speed),
     ));
-
-    // Raycast for immediate hit detection
-    let Ok(rapier_context) = rapier_context.get_single() else {
-        return;
-    };
-
-    let max_dist = 200.0;
-    if let Some((entity, _hit_pos)) = cast_ray(rapier_context, bullet_origin, *fire_direction, max_dist) {
-        // Check if entity has a HitBox component
-        if let Ok(hit_box) = hitbox_q.get(entity) {
-            // Get parent dinosaur
-            if let Ok(_parent) = parent_q.get(entity) {
-                let _damage = calculate_damage(hit_box.part);
-                // We'll handle damage through collision detection instead of raycast
-                // to avoid deferred world access issues
-            }
-        }
-    }
-}
-
-fn cast_ray(
-    rapier_context: &RapierContext,
-    origin: Vec3,
-    direction: Vec3,
-    max_dist: f32,
-) -> Option<(Entity, Vec3)> {
-    rapier_context.cast_ray_and_get_normal(
-        origin.into(),
-        direction.into(),
-        max_dist,
-        true,
-        QueryFilter::default(),
-    ).map(|(entity, hit)| {
-        (entity, origin + direction * hit.time_of_impact)
-    })
-}
-
-fn calculate_damage(part: BodyPart) -> f32 {
-    match part {
-        BodyPart::Head => 50.0,
-        BodyPart::Body => 15.0,
-        BodyPart::Legs => 8.0,
-    }
 }
 
 fn update_bullets(
     time: Res<Time>,
     mut commands: Commands,
-    mut bullet_q: Query<(Entity, &mut Bullet, &mut Transform)>,
+    mut bullet_q: Query<(Entity, &mut Bullet, &Transform)>,
 ) {
-    for (entity, mut bullet, mut transform) in bullet_q.iter_mut() {
+    for (entity, mut bullet, _transform) in bullet_q.iter_mut() {
         bullet.lifetime.tick(time.delta());
 
         if bullet.lifetime.finished() {
@@ -168,9 +127,66 @@ fn update_bullets(
             continue;
         }
 
-        // Move bullet based on velocity
-        let forward = transform.forward();
-        transform.translation += forward * 100.0 * time.delta_secs();
+        // Move bullet based on velocity (physics handles this, but we ensure lifetime)
+    }
+}
+
+fn check_bullet_collisions(
+    mut commands: Commands,
+    mut bullet_q: Query<(Entity, &Bullet, &Transform, &Velocity)>,
+    hitbox_q: Query<(&HitBox, &Parent)>,
+    dino_q: Query<&GlobalTransform, With<Dinosaur>>,
+    parent_q: Query<&Parent>,
+    mut hit_events: EventWriter<BulletHitEvent>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    for (bullet_entity, _bullet, bullet_transform, _velocity) in bullet_q.iter_mut() {
+        let bullet_pos = bullet_transform.translation;
+
+        // Check collision with all hitboxes
+        for (hit_box, parent) in hitbox_q.iter() {
+            // Get the dinosaur entity
+            let Ok(dino_parent) = parent_q.get(parent.get()) else { continue };
+
+            // Get dinosaur position
+            let Ok(dino_transform) = dino_q.get(dino_parent.get()) else { continue };
+            let dino_pos = dino_transform.translation();
+
+            // Simple distance check for collision
+            let distance = (bullet_pos - dino_pos).length();
+
+            // Hit detection threshold
+            if distance < 2.5 {
+                // Calculate damage based on body part
+                let damage = calculate_damage(hit_box.part);
+
+                // Send hit event
+                hit_events.send(BulletHitEvent {
+                    target: dino_parent.get(),
+                    damage,
+                    position: bullet_pos,
+                    hit_part: hit_box.part,
+                });
+
+                // Spawn blood particles
+                spawn_blood_particles(&mut commands, &mut meshes, &mut materials, bullet_pos);
+
+                // Despawn bullet
+                commands.entity(bullet_entity).despawn_recursive();
+
+                // Only one hit per bullet
+                break;
+            }
+        }
+    }
+}
+
+fn calculate_damage(part: BodyPart) -> f32 {
+    match part {
+        BodyPart::Head => 50.0,
+        BodyPart::Body => 15.0,
+        BodyPart::Legs => 8.0,
     }
 }
 

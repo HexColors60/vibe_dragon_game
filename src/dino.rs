@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use rand::Rng;
+use crate::weapon::BulletHitEvent;
+use crate::GameScore;
+use crate::pause::GameState;
 
 pub struct DinoPlugin;
 
@@ -48,16 +51,46 @@ pub enum AIState {
     Dead,
 }
 
+#[derive(Component)]
+pub struct DinoDeath {
+    timer: Timer,
+}
+
+#[derive(Resource)]
+pub struct DinoSpawnConfig {
+    pub count: u32,
+    pub spawn_radius: f32,
+    pub min_distance_from_player: f32,
+}
+
+impl Default for DinoSpawnConfig {
+    fn default() -> Self {
+        Self {
+            count: 15,
+            spawn_radius: 150.0,
+            min_distance_from_player: 20.0,
+        }
+    }
+}
+
 impl Plugin for DinoPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_dinosaurs)
+        app.init_resource::<DinoSpawnConfig>()
+            .add_event::<RespawnDinosEvent>()
+            .add_systems(Startup, spawn_dinosaurs)
             .add_systems(Update, (
+                handle_bullet_hits,
+                handle_respawn_dinos,
                 update_dino_ai,
                 update_dino_movement,
                 check_dino_death,
-            ));
+                update_dino_death_animation,
+            ).run_if(in_state(GameState::Playing)));
     }
 }
+
+#[derive(Event)]
+pub struct RespawnDinosEvent;
 
 fn spawn_dinosaurs(
     mut commands: Commands,
@@ -168,6 +201,78 @@ fn spawn_dinosaur(
     }
 }
 
+fn handle_respawn_dinos(
+    mut commands: Commands,
+    mut events: EventReader<RespawnDinosEvent>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    config: Res<DinoSpawnConfig>,
+) {
+    for _event in events.read() {
+        let mut rng = rand::thread_rng();
+
+        for _ in 0..config.count {
+            let species = match rng.gen_range(0..3) {
+                0 => DinoSpecies::Triceratops,
+                1 => DinoSpecies::Velociraptor,
+                _ => DinoSpecies::Brachiosaurus,
+            };
+
+            let x: f32 = rng.gen_range(-config.spawn_radius..config.spawn_radius);
+            let z: f32 = rng.gen_range(-config.spawn_radius..config.spawn_radius);
+
+            // Don't spawn too close to origin
+            if x.abs() < config.min_distance_from_player && z.abs() < config.min_distance_from_player {
+                continue;
+            }
+
+            spawn_dinosaur(&mut commands, &mut meshes, &mut materials, species, Vec3::new(x, 0.0, z));
+        }
+    }
+}
+
+fn handle_bullet_hits(
+    mut commands: Commands,
+    mut events: EventReader<BulletHitEvent>,
+    mut dino_q: Query<(&mut DinoHealth, &mut DinoAI)>,
+    mut score: ResMut<GameScore>,
+    _meshes: ResMut<Assets<Mesh>>,
+    _materials: ResMut<Assets<StandardMaterial>>,
+) {
+    for event in events.read() {
+        if let Ok((mut health, mut ai)) = dino_q.get_mut(event.target) {
+            health.current -= event.damage;
+
+            // Visual feedback - flash red
+            commands.entity(event.target).insert(FlashDamage {
+                timer: Timer::from_seconds(0.1, TimerMode::Once),
+            });
+
+            if health.current <= 0.0 {
+                ai.state = AIState::Dead;
+
+                // Add score based on hit part (headshot bonus)
+                let score_gain = match event.hit_part {
+                    BodyPart::Head => 200,
+                    BodyPart::Body => 100,
+                    BodyPart::Legs => 50,
+                };
+                score.score += score_gain;
+
+                // Add death animation component
+                commands.entity(event.target).insert(DinoDeath {
+                    timer: Timer::from_seconds(3.0, TimerMode::Once),
+                });
+            }
+        }
+    }
+}
+
+#[derive(Component)]
+struct FlashDamage {
+    timer: Timer,
+}
+
 fn update_dino_ai(
     _time: Res<Time>,
     mut dino_q: Query<(&mut DinoAI, &Transform)>,
@@ -247,11 +352,38 @@ fn update_dino_movement(
 }
 
 fn check_dino_death(
-    mut commands: Commands,
-    dino_q: Query<(Entity, &DinoHealth)>,
+    _dino_q: Query<(Entity, &DinoAI)>,
 ) {
-    for (entity, health) in dino_q.iter() {
-        if health.current <= 0.0 {
+    // Death is now handled in handle_bullet_hits
+    // This function can be used for additional death checks
+}
+
+fn update_dino_death_animation(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut dino_q: Query<(Entity, &mut DinoDeath, &mut Transform, &DinoSpecies)>,
+) {
+    for (entity, mut death, mut transform, species) in dino_q.iter_mut() {
+        death.timer.tick(time.delta());
+
+        // Fall over animation
+        let progress = 1.0 - (death.timer.elapsed_secs() / death.timer.duration().as_secs_f32());
+        let fall_angle = progress * std::f32::consts::FRAC_PI_2;
+
+        // Rotate to fall on side
+        transform.rotation = Quat::from_rotation_z(fall_angle);
+
+        // Lower to ground
+        let height = match species {
+            DinoSpecies::Triceratops => 1.2,
+            DinoSpecies::Velociraptor => 0.5,
+            DinoSpecies::Brachiosaurus => 4.0,
+        };
+        transform.translation.y = (height * 0.5) * (1.0 - progress * 0.8);
+
+        // Change color to indicate death
+        if death.timer.finished() {
+            // Despawn after animation
             commands.entity(entity).despawn_recursive();
         }
     }
