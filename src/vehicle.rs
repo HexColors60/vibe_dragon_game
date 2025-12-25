@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use bevy::math::Mat3;
-use crate::input::PlayerInput;
+use crate::input::{PlayerInput, TargetLock};
+use crate::dino::Dinosaur;
 
 pub struct VehiclePlugin;
 
@@ -20,7 +21,11 @@ pub struct VehicleVelocity {
 impl Plugin for VehiclePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_vehicle)
-            .add_systems(Update, (handle_vehicle_movement, rotate_weapon_turret));
+            .add_systems(Update, (
+                handle_vehicle_movement,
+                rotate_weapon_turret,
+                update_target_lock,
+            ));
     }
 }
 
@@ -149,10 +154,12 @@ fn handle_vehicle_movement(
 }
 
 fn rotate_weapon_turret(
+    time: Res<Time>,
+    input: Res<PlayerInput>,
+    target_lock: Res<TargetLock>,
     mut turret_q: Query<&mut Transform, (With<WeaponTurret>, Without<PlayerVehicle>)>,
     vehicle_q: Query<&Transform, (With<PlayerVehicle>, Without<WeaponTurret>)>,
-    window_q: Query<&Window>,
-    camera_3d_q: Query<(&Camera, &GlobalTransform)>,
+    dino_q: Query<&GlobalTransform, With<Dinosaur>>,
 ) {
     let Ok(mut turret_transform) = turret_q.get_single_mut() else {
         return;
@@ -162,35 +169,33 @@ fn rotate_weapon_turret(
         return;
     };
 
-    let Ok(window) = window_q.get_single() else {
-        return;
-    };
+    let dt = time.delta_secs();
+    let turret_rotation_speed = 2.0;
 
-    let Ok((camera, camera_transform)) = camera_3d_q.get_single() else {
-        return;
-    };
+    // Check if we have a locked target
+    if let Some(locked_entity) = target_lock.locked_entity {
+        if let Ok(dino_transform) = dino_q.get(locked_entity) {
+            let turret_pos = vehicle_transform.translation + Vec3::new(0.0, 1.9, 0.0);
+            let target_pos = dino_transform.translation();
+            let direction = (target_pos - turret_pos).normalize();
 
-    // Get cursor position in world
-    let Some(cursor_pos) = window.cursor_position() else {
-        return;
-    };
+            if direction.length_squared() > 0.01 {
+                let forward = Vec3::new(direction.x, 0.0, direction.z).normalize();
+                let up = Vec3::Y;
+                let right = forward.cross(up).normalize();
+                let new_up = right.cross(forward).normalize();
 
-    // Raycast from camera
-    let Ok(ray) = camera.viewport_to_world(camera_transform, cursor_pos) else {
-        return;
-    };
-
-    // Project to a horizontal plane at vehicle height
-    let plane_origin = vehicle_transform.translation + Vec3::Y * 2.0;
-    let plane_normal = Vec3::Y;
-    let t = (plane_origin - ray.origin).dot(plane_normal) / ray.direction.dot(plane_normal);
-
-    if t > 0.0 {
-        let target_point = ray.origin + ray.direction * t;
-
-        // Rotate turret to face target
+                turret_transform.rotation = Quat::from_mat3(&Mat3::from_cols(
+                    right,
+                    new_up,
+                    -forward,
+                ));
+            }
+        }
+    } else if let Some(lock_pos) = target_lock.lock_position {
+        // Use locked position
         let turret_pos = vehicle_transform.translation + Vec3::new(0.0, 1.9, 0.0);
-        let direction = (target_point - turret_pos).normalize();
+        let direction = (lock_pos - turret_pos).normalize();
 
         if direction.length_squared() > 0.01 {
             let forward = Vec3::new(direction.x, 0.0, direction.z).normalize();
@@ -204,5 +209,82 @@ fn rotate_weapon_turret(
                 -forward,
             ));
         }
+    } else {
+        // Use mouse movement for rotation
+        if input.turret_left {
+            turret_transform.rotate_y(turret_rotation_speed * dt);
+        }
+        if input.turret_right {
+            turret_transform.rotate_y(-turret_rotation_speed * dt);
+        }
     }
 }
+
+fn update_target_lock(
+    mut commands: Commands,
+    input: Res<PlayerInput>,
+    mut target_lock: ResMut<TargetLock>,
+    vehicle_q: Query<&Transform, With<crate::vehicle::PlayerVehicle>>,
+    dino_q: Query<(Entity, &GlobalTransform), With<Dinosaur>>,
+    mut indicator_q: Query<&mut Transform, With<TargetLockIndicator>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    // Handle target locking
+    if input.lock_target {
+        let Ok(vehicle_transform) = vehicle_q.get_single() else {
+            return;
+        };
+
+        let vehicle_pos = vehicle_transform.translation;
+
+        // Find closest dinosaur
+        let mut closest_entity: Option<Entity> = None;
+        let mut closest_distance = f32::MAX;
+
+        for (entity, dino_transform) in dino_q.iter() {
+            let dino_pos = dino_transform.translation();
+            let distance = (dino_pos - vehicle_pos).length();
+
+            if distance < closest_distance && distance < 100.0 {
+                closest_distance = distance;
+                closest_entity = Some(entity);
+            }
+        }
+
+        if let Some(entity) = closest_entity {
+            target_lock.locked_entity = Some(entity);
+            if let Ok((_, transform)) = dino_q.get(entity) {
+                target_lock.lock_position = Some(transform.translation());
+            }
+
+            // Spawn red circle indicator
+            commands.spawn((
+                TargetLockIndicator,
+                Mesh3d(meshes.add(Torus::new(1.5, 0.1))),
+                MeshMaterial3d(materials.add(StandardMaterial {
+                    base_color: Color::srgba(1.0, 0.0, 0.0, 0.8),
+                    unlit: true,
+                    ..default()
+                })),
+                Transform::from_xyz(0.0, 0.5, 0.0),
+            )).set_parent(entity);
+        } else {
+            target_lock.locked_entity = None;
+            target_lock.lock_position = None;
+        }
+    }
+
+    // Update indicator position
+    if let Some(locked_entity) = target_lock.locked_entity {
+        if let Ok((_, dino_transform)) = dino_q.get(locked_entity) {
+            for mut transform in indicator_q.iter_mut() {
+                let pos = dino_transform.translation();
+                transform.translation = Vec3::new(pos.x, pos.y + 0.5, pos.z);
+            }
+        }
+    }
+}
+
+#[derive(Component)]
+struct TargetLockIndicator;

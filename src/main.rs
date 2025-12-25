@@ -7,6 +7,7 @@ mod vehicle;
 mod dino;
 mod weapon;
 mod ui;
+mod pause;
 
 use camera::CameraPlugin;
 use input::InputPlugin;
@@ -14,6 +15,7 @@ use vehicle::VehiclePlugin;
 use dino::DinoPlugin;
 use weapon::WeaponPlugin;
 use ui::UIPlugin;
+use pause::{PausePlugin, GameState};
 
 fn main() {
     App::new()
@@ -29,9 +31,11 @@ fn main() {
             DinoPlugin,
             WeaponPlugin,
             UIPlugin,
+            PausePlugin,
         ))
         .add_systems(Startup, setup)
         .add_systems(Update, update_score)
+        .enable_state_scoped_entities::<GameState>()
         .run();
 }
 

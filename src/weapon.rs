@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use crate::dino::{BodyPart, HitBox};
 use crate::vehicle::WeaponTurret;
+use crate::input::TargetLock;
 
 pub struct WeaponPlugin;
 
@@ -62,10 +63,19 @@ fn handle_shooting(
     rapier_context: Query<&RapierContext>,
     hitbox_q: Query<&HitBox>,
     parent_q: Query<&Parent>,
+    target_lock: Res<TargetLock>,
+    keyboard: Res<ButtonInput<KeyCode>>,
 ) {
     let current_time = time.elapsed_secs();
 
-    if !input.shooting {
+    // Check for shooting input (either left click or spacebar when locked)
+    let should_shoot = if target_lock.locked_entity.is_some() {
+        input.shooting || keyboard.pressed(KeyCode::Space)
+    } else {
+        input.shooting
+    };
+
+    if !should_shoot {
         return;
     }
 
