@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::window::CursorGrabMode;
 use crate::input::PlayerInput;
 use crate::dino::RespawnDinosEvent;
 
@@ -15,10 +16,14 @@ impl Plugin for PausePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>()
             .add_event::<RestartGameEvent>()
-            .add_systems(OnEnter(GameState::Paused), spawn_pause_menu)
-            .add_systems(OnExit(GameState::Paused), despawn_pause_menu)
-            .add_systems(Update, (handle_pause_input.run_if(in_state(GameState::Playing)), handle_pause_menu_input.run_if(in_state(GameState::Paused))))
-            .add_systems(Update, handle_restart_game);
+            .add_systems(OnEnter(GameState::Playing), setup_cursor)
+            .add_systems(OnEnter(GameState::Paused), (show_cursor, spawn_pause_menu))
+            .add_systems(OnExit(GameState::Paused), (hide_cursor, despawn_pause_menu))
+            .add_systems(Update, (
+                handle_pause_input.run_if(in_state(GameState::Playing)),
+                handle_pause_menu_input.run_if(in_state(GameState::Paused)),
+                handle_restart_game,
+            ));
     }
 }
 
@@ -37,16 +42,28 @@ pub struct RestartButton;
 #[derive(Component)]
 pub struct QuitButton;
 
-fn spawn_pause_menu(mut commands: Commands) {
-    // Create camera for UI
-    commands.spawn((
-        Camera2d,
-        Camera {
-            order: 999,
-            ..default()
-        },
-    ));
+fn setup_cursor(mut window_q: Query<&mut Window>) {
+    if let Ok(mut window) = window_q.get_single_mut() {
+        window.cursor_options.grab_mode = CursorGrabMode::Locked;
+        window.cursor_options.visible = false;
+    }
+}
 
+fn show_cursor(mut window_q: Query<&mut Window>) {
+    if let Ok(mut window) = window_q.get_single_mut() {
+        window.cursor_options.grab_mode = CursorGrabMode::None;
+        window.cursor_options.visible = true;
+    }
+}
+
+fn hide_cursor(mut window_q: Query<&mut Window>) {
+    if let Ok(mut window) = window_q.get_single_mut() {
+        window.cursor_options.grab_mode = CursorGrabMode::Locked;
+        window.cursor_options.visible = false;
+    }
+}
+
+fn spawn_pause_menu(mut commands: Commands) {
     // Pause menu container
     commands.spawn((
         PauseMenu,
@@ -75,6 +92,20 @@ fn spawn_pause_menu(mut commands: Commands) {
             },
         ));
 
+        // Instructions text
+        parent.spawn((
+            Text::new("Click buttons or press keys: [R] Restart  [Q] Quit  [ESC] Resume"),
+            TextFont {
+                font_size: 16.0,
+                ..default()
+            },
+            TextColor(Color::srgb(0.8, 0.8, 0.8)),
+            Node {
+                margin: UiRect::bottom(Val::Px(30.0)),
+                ..default()
+            },
+        ));
+
         // Resume button
         parent.spawn((
             ResumeButton,
@@ -92,7 +123,7 @@ fn spawn_pause_menu(mut commands: Commands) {
             BackgroundColor(Color::srgb(0.2, 0.5, 0.8)),
         )).with_children(|parent| {
             parent.spawn((
-                Text::new("Resume"),
+                Text::new("Resume [ESC]"),
                 TextFont {
                     font_size: 24.0,
                     ..default()
@@ -118,7 +149,7 @@ fn spawn_pause_menu(mut commands: Commands) {
             BackgroundColor(Color::srgb(0.5, 0.5, 0.2)),
         )).with_children(|parent| {
             parent.spawn((
-                Text::new("Restart"),
+                Text::new("Restart [R]"),
                 TextFont {
                     font_size: 24.0,
                     ..default()
@@ -143,7 +174,7 @@ fn spawn_pause_menu(mut commands: Commands) {
             BackgroundColor(Color::srgb(0.8, 0.2, 0.2)),
         )).with_children(|parent| {
             parent.spawn((
-                Text::new("Quit Game"),
+                Text::new("Quit [Q]"),
                 TextFont {
                     font_size: 24.0,
                     ..default()
@@ -157,12 +188,8 @@ fn spawn_pause_menu(mut commands: Commands) {
 fn despawn_pause_menu(
     mut commands: Commands,
     menu_q: Query<Entity, With<PauseMenu>>,
-    camera_q: Query<Entity, (With<Camera2d>, Without<Camera3d>)>,
 ) {
     for entity in menu_q.iter() {
-        commands.entity(entity).despawn_recursive();
-    }
-    for entity in camera_q.iter() {
         commands.entity(entity).despawn_recursive();
     }
 }
@@ -179,32 +206,38 @@ fn handle_pause_input(
 fn handle_pause_menu_input(
     mut next_state: ResMut<NextState<GameState>>,
     mut restart_events: EventWriter<RestartGameEvent>,
+    keyboard: Res<ButtonInput<KeyCode>>,
     mut interaction_q: Query<
-        (&Interaction, &Parent),
+        (Option<&ResumeButton>, Option<&RestartButton>, Option<&QuitButton>),
         (With<Button>, Changed<Interaction>),
     >,
-    children_q: Query<&Children>,
-    resume_button_q: Query<&ResumeButton>,
-    restart_button_q: Query<&RestartButton>,
-    quit_button_q: Query<&QuitButton>,
     mut app_exit: EventWriter<bevy::app::AppExit>,
 ) {
-    for (interaction, parent) in interaction_q.iter_mut() {
-        if *interaction == Interaction::Pressed {
-            // Check all children to find button type
-            for child in children_q.iter_descendants(parent.get()) {
-                if resume_button_q.get(child).is_ok() {
-                    next_state.set(GameState::Playing);
-                    return;
-                } else if restart_button_q.get(child).is_ok() {
-                    restart_events.send(RestartGameEvent);
-                    next_state.set(GameState::Playing);
-                    return;
-                } else if quit_button_q.get(child).is_ok() {
-                    app_exit.send(bevy::app::AppExit::Success);
-                    return;
-                }
-            }
+    // Handle keyboard shortcuts
+    if keyboard.just_pressed(KeyCode::KeyR) {
+        restart_events.send(RestartGameEvent);
+        next_state.set(GameState::Playing);
+        return;
+    }
+    if keyboard.just_pressed(KeyCode::Escape) {
+        next_state.set(GameState::Playing);
+        return;
+    }
+    if keyboard.just_pressed(KeyCode::KeyQ) {
+        app_exit.send(bevy::app::AppExit::Success);
+        return;
+    }
+
+    // Handle mouse clicks on buttons
+    for (resume_opt, restart_opt, quit_opt) in interaction_q.iter_mut() {
+        // Check if button was just clicked (interaction changed to Pressed)
+        if resume_opt.is_some() {
+            next_state.set(GameState::Playing);
+        } else if restart_opt.is_some() {
+            restart_events.send(RestartGameEvent);
+            next_state.set(GameState::Playing);
+        } else if quit_opt.is_some() {
+            app_exit.send(bevy::app::AppExit::Success);
         }
     }
 }
