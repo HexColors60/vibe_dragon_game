@@ -11,6 +11,12 @@ mod pause;
 mod weapon_system;
 mod damage_popup;
 mod combo;
+mod effects;
+mod game_mode;
+mod main_menu;
+mod environment;
+mod minimap;
+mod shop;
 
 use camera::CameraPlugin;
 use input::InputPlugin;
@@ -22,6 +28,12 @@ use pause::{PausePlugin, GameState};
 use weapon_system::WeaponInventory;
 use combo::ComboPlugin;
 use damage_popup::DamagePopupPlugin;
+use effects::EffectsPlugin;
+use game_mode::GameModePlugin;
+use main_menu::MainMenuPlugin;
+use environment::EnvironmentPlugin;
+use minimap::MinimapPlugin;
+use shop::ShopPlugin;
 
 fn main() {
     App::new()
@@ -41,6 +53,12 @@ fn main() {
             PausePlugin,
             ComboPlugin,
             DamagePopupPlugin,
+            EffectsPlugin,
+            GameModePlugin,
+            MainMenuPlugin,
+            EnvironmentPlugin,
+            MinimapPlugin,
+            ShopPlugin,
         ))
         .add_systems(Startup, setup)
         .add_systems(Update, update_score)

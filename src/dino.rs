@@ -22,7 +22,7 @@ pub struct DinoPlugin;
 #[derive(Component)]
 pub struct Dinosaur;
 
-#[derive(Component, Clone, Copy)]
+#[derive(Component, Clone, Copy, PartialEq)]
 pub enum DinoSpecies {
     Triceratops,
     Velociraptor,
@@ -55,6 +55,21 @@ pub struct DinoAI {
     pub wander_target: Option<Vec3>,
     pub flee_direction: Vec3,
     pub move_speed: f32,
+    pub attack_cooldown: Timer,
+    pub attack_range: f32,
+}
+
+impl Default for DinoAI {
+    fn default() -> Self {
+        Self {
+            state: AIState::Roam,
+            wander_target: None,
+            flee_direction: Vec3::ZERO,
+            move_speed: 10.0,
+            attack_cooldown: Timer::from_seconds(2.0, TimerMode::Once),
+            attack_range: 15.0,
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -62,6 +77,7 @@ pub enum AIState {
     Idle,
     Roam,
     Flee,
+    Attack,
     Dead,
 }
 
@@ -92,20 +108,28 @@ impl Plugin for DinoPlugin {
         app.init_resource::<DinoSpawnConfig>()
             .init_resource::<CoinSystem>()
             .add_event::<RespawnDinosEvent>()
+            .add_event::<DinoAttackEvent>()
             .add_systems(Startup, spawn_dinosaurs)
             .add_systems(Update, (
                 handle_bullet_hits,
                 handle_respawn_dinos,
+                update_damage_reaction,
                 update_dino_ai,
                 update_dino_movement,
+                process_dino_attacks,
                 check_dino_death,
                 update_dino_death_animation,
-            ).run_if(in_state(GameState::Playing)));
+            ).chain().run_if(in_state(GameState::Playing)));
     }
 }
 
 #[derive(Event)]
 pub struct RespawnDinosEvent;
+
+#[derive(Event)]
+pub struct DinoAttackEvent {
+    pub damage: f32,
+}
 
 fn spawn_dinosaurs(
     mut commands: Commands,
@@ -174,6 +198,12 @@ fn spawn_dinosaur(
             wander_target: None,
             flee_direction: Vec3::ZERO,
             move_speed: speed,
+            attack_cooldown: Timer::from_seconds(2.0, TimerMode::Once),
+            attack_range: if species == DinoSpecies::Velociraptor || species == DinoSpecies::TRex {
+                20.0 // Aggressive dinos have longer attack range
+            } else {
+                0.0 // Other dinos don't attack
+            },
         },
         Transform::from_translation(position),
         RigidBody::KinematicPositionBased,
@@ -272,12 +302,19 @@ fn handle_bullet_hits(
     mut score: ResMut<GameScore>,
     mut combo: ResMut<ComboSystem>,
     mut coins: ResMut<CoinSystem>,
+    mut time_attack: ResMut<crate::game_mode::TimeAttackMode>,
     _meshes: ResMut<Assets<Mesh>>,
     _materials: ResMut<Assets<StandardMaterial>>,
+    mut kill_shake_events: EventWriter<crate::effects::KillShakeEvent>,
 ) {
     for event in events.read() {
         if let Ok((mut health, mut ai, species)) = dino_q.get_mut(event.target) {
             health.current -= event.damage;
+
+            // Add damage reaction - pause and flee faster
+            if commands.get_entity(event.target).is_some() {
+                commands.entity(event.target).insert(DamageReaction::new());
+            }
 
             // Visual feedback - flash red
             commands.entity(event.target).insert(FlashDamage {
@@ -289,6 +326,11 @@ fn handle_bullet_hits(
 
                 // Add combo kill
                 combo.add_kill();
+
+                // Increment time attack mode kill counter
+                if time_attack.is_active {
+                    time_attack.kills += 1;
+                }
 
                 // Calculate base score and coins based on species
                 let (base_score, coin_reward) = match species {
@@ -313,6 +355,9 @@ fn handle_bullet_hits(
                 // Add coins (not affected by combo or hit part)
                 coins.total_coins += coin_reward;
 
+                // Trigger screen shake on kill
+                kill_shake_events.send(crate::effects::KillShakeEvent);
+
                 // Add death animation component
                 commands.entity(event.target).insert(DinoDeath {
                     timer: Timer::from_seconds(3.0, TimerMode::Once),
@@ -327,8 +372,23 @@ struct FlashDamage {
     timer: Timer,
 }
 
+#[derive(Component)]
+pub struct DamageReaction {
+    pub pause_timer: Timer,
+    pub flee_boost: f32,
+}
+
+impl DamageReaction {
+    pub fn new() -> Self {
+        Self {
+            pause_timer: Timer::from_seconds(0.3, TimerMode::Once),
+            flee_boost: 1.5, // 50% speed boost when fleeing
+        }
+    }
+}
+
 fn update_dino_ai(
-    _time: Res<Time>,
+    time: Res<Time>,
     mut dino_q: Query<(&mut DinoAI, &Transform)>,
     vehicle_q: Query<&Transform, (With<super::vehicle::PlayerVehicle>, Without<Dinosaur>)>,
 ) {
@@ -344,11 +404,19 @@ fn update_dino_ai(
             continue;
         }
 
+        // Update attack cooldown
+        ai.attack_cooldown.tick(time.delta());
+
         let dino_pos = transform.translation;
         let distance_to_vehicle = (vehicle_pos - dino_pos).length();
 
-        // Flee if player is close
-        if distance_to_vehicle < 30.0 && ai.state != AIState::Flee {
+        // Attack behavior for aggressive dinos (Velociraptor, T-Rex)
+        if ai.attack_range > 0.0 && distance_to_vehicle < ai.attack_range && ai.attack_cooldown.finished() {
+            if ai.state != AIState::Attack {
+                ai.state = AIState::Attack;
+            }
+        } else if distance_to_vehicle < 30.0 && ai.state != AIState::Flee && ai.state != AIState::Attack {
+            // Flee if player is close (and not attacking)
             ai.state = AIState::Flee;
             let flee_dir = (dino_pos - vehicle_pos).normalize();
             ai.flee_direction = Vec3::new(flee_dir.x, 0.0, flee_dir.z).normalize();
@@ -370,13 +438,41 @@ fn update_dino_ai(
     }
 }
 
+fn update_damage_reaction(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut dino_q: Query<(Entity, &mut DinoAI, &mut DamageReaction)>,
+) {
+    for (entity, mut ai, mut reaction) in dino_q.iter_mut() {
+        reaction.pause_timer.tick(time.delta());
+
+        // While paused, don't process AI
+        if !reaction.pause_timer.finished() {
+            continue;
+        }
+
+        // Remove the component after pause expires
+        commands.entity(entity).remove::<DamageReaction>();
+
+        // Immediately switch to flee when recovering from damage
+        if ai.state != AIState::Dead && ai.state != AIState::Flee {
+            ai.state = AIState::Flee;
+        }
+    }
+}
+
 fn update_dino_movement(
     time: Res<Time>,
-    mut dino_q: Query<(&mut Transform, &DinoAI)>,
+    mut dino_q: Query<(&mut Transform, &DinoAI, Option<&DamageReaction>)>,
+    vehicle_q: Query<&Transform, (With<super::vehicle::PlayerVehicle>, Without<Dinosaur>)>,
 ) {
     let dt = time.delta_secs();
+    let Ok(vehicle_transform) = vehicle_q.get_single() else {
+        return;
+    };
+    let vehicle_pos = vehicle_transform.translation;
 
-    for (mut transform, ai) in dino_q.iter_mut() {
+    for (mut transform, ai, damage_reaction) in dino_q.iter_mut() {
         if ai.state == AIState::Dead || ai.state == AIState::Idle {
             continue;
         }
@@ -390,17 +486,85 @@ fn update_dino_movement(
                 }
             }
             AIState::Flee => ai.flee_direction,
+            AIState::Attack => {
+                // Move toward vehicle when attacking
+                (vehicle_pos - transform.translation).normalize()
+            }
             _ => Vec3::ZERO,
         };
 
         if direction.length_squared() > 0.01 {
-            let movement = direction * ai.move_speed * dt;
+            // Apply speed boost when damaged and fleeing
+            let speed_boost = if ai.state == AIState::Flee && damage_reaction.is_some() {
+                damage_reaction.unwrap().flee_boost
+            } else if ai.state == AIState::Attack {
+                1.5 // Move faster when attacking
+            } else {
+                1.0
+            };
+
+            let movement = direction * ai.move_speed * speed_boost * dt;
             transform.translation.x += movement.x;
             transform.translation.z += movement.z;
 
             // Face movement direction
             let target_rotation = Quat::from_rotation_y(direction.x.atan2(direction.z));
             transform.rotation = transform.rotation.slerp(target_rotation, 0.1);
+        }
+    }
+}
+
+fn process_dino_attacks(
+    time: Res<Time>,
+    mut dino_q: Query<(Entity, &mut DinoAI, &Transform, &DinoSpecies)>,
+    vehicle_q: Query<&Transform, With<super::vehicle::PlayerVehicle>>,
+    mut vehicle_health_q: Query<&mut super::vehicle::VehicleHealth>,
+    mut attack_events: EventWriter<DinoAttackEvent>,
+    mut hit_feedback: EventWriter<crate::effects::HitFeedbackEvent>,
+) {
+    let Ok(vehicle_transform) = vehicle_q.get_single() else {
+        return;
+    };
+    let vehicle_pos = vehicle_transform.translation;
+
+    for (entity, mut ai, dino_transform, species) in dino_q.iter_mut() {
+        if ai.state != AIState::Attack {
+            continue;
+        }
+
+        let dino_pos = dino_transform.translation;
+        let distance_to_vehicle = (vehicle_pos - dino_pos).length();
+
+        // Check if dino has reached the vehicle to attack
+        if distance_to_vehicle < 3.0 && ai.attack_cooldown.finished() {
+            // Calculate damage based on species
+            let damage = match species {
+                DinoSpecies::Velociraptor => 10.0,
+                DinoSpecies::TRex => 25.0,
+                _ => 5.0,
+            };
+
+            // Apply damage to vehicle
+            if let Ok(mut vehicle_health) = vehicle_health_q.get_single_mut() {
+                vehicle_health.current -= damage;
+                vehicle_health.current = vehicle_health.current.max(0.0);
+
+                // Trigger hit feedback
+                hit_feedback.send(crate::effects::HitFeedbackEvent);
+            }
+
+            // Send attack event
+            attack_events.send(DinoAttackEvent { damage });
+
+            // Reset attack cooldown
+            ai.attack_cooldown.reset();
+
+            // After attacking, switch to flee or roam
+            ai.state = AIState::Flee;
+        }
+        // If too far from vehicle while attacking, switch back to roaming
+        else if distance_to_vehicle > ai.attack_range * 1.5 {
+            ai.state = AIState::Roam;
         }
     }
 }

@@ -4,6 +4,7 @@ use crate::vehicle::WeaponTurret;
 use crate::input::TargetLock;
 use crate::pause::GameState;
 use crate::weapon_system::WeaponInventory;
+use crate::effects::HitFeedbackEvent;
 
 pub struct WeaponPlugin;
 
@@ -58,6 +59,7 @@ impl Plugin for WeaponPlugin {
         app.init_resource::<WeaponState>()
             .add_event::<BulletHitEvent>()
             .add_event::<RocketExplosionEvent>()
+            .add_event::<HitFeedbackEvent>()
             .add_systems(Update, (
                 handle_shooting,
                 update_bullets,
@@ -258,6 +260,7 @@ fn check_bullet_collisions(
     hitbox_q: Query<(&HitBox, &GlobalTransform, &Parent)>,
     _parent_q: Query<&Parent>,
     mut hit_events: EventWriter<BulletHitEvent>,
+    mut hit_feedback: EventWriter<HitFeedbackEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut explosion_events: EventReader<RocketExplosionEvent>,
@@ -283,6 +286,9 @@ fn check_bullet_collisions(
 
                 // Spawn blood particles
                 spawn_blood_particles(&mut commands, &mut meshes, &mut materials, dino_pos);
+
+                // Trigger crosshair feedback
+                hit_feedback.send(HitFeedbackEvent);
             }
         }
 
@@ -333,6 +339,9 @@ fn check_bullet_collisions(
                     position: bullet_pos,
                     hit_part: hit_part,
                 });
+
+                // Trigger crosshair feedback on hit
+                hit_feedback.send(HitFeedbackEvent);
 
                 // Spawn blood particles
                 spawn_blood_particles(&mut commands, &mut meshes, &mut materials, bullet_pos);

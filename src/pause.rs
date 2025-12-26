@@ -17,11 +17,10 @@ impl Plugin for PausePlugin {
         app.init_state::<GameState>()
             .add_event::<RestartGameEvent>()
             .add_systems(OnEnter(GameState::Playing), setup_cursor)
-            .add_systems(OnEnter(GameState::Paused), (show_cursor, spawn_pause_menu))
-            .add_systems(OnExit(GameState::Paused), (hide_cursor, despawn_pause_menu))
+            .add_systems(OnEnter(GameState::Paused), show_cursor)
+            .add_systems(OnExit(GameState::Paused), hide_cursor)
             .add_systems(Update, (
                 handle_pause_input.run_if(in_state(GameState::Playing)),
-                handle_pause_menu_input.run_if(in_state(GameState::Paused)),
                 handle_restart_game,
             ));
     }
@@ -63,6 +62,10 @@ fn hide_cursor(mut window_q: Query<&mut Window>) {
     }
 }
 
+// The pause menu is now handled by main_menu.rs
+// These functions are kept for reference but not used
+
+#[allow(dead_code)]
 fn spawn_pause_menu(mut commands: Commands) {
     // Pause menu container
     commands.spawn((

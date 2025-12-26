@@ -5,6 +5,16 @@ use crate::input::{PlayerInput, TargetLock};
 use crate::dino::Dinosaur;
 use crate::camera::MainCamera;
 
+#[derive(Event)]
+pub struct SpeedModifierEvent {
+    pub multiplier: f32,
+}
+
+#[derive(Resource, Default)]
+pub struct SpeedModifier {
+    pub current_multiplier: f32,
+}
+
 pub struct VehiclePlugin;
 
 #[derive(Component)]
@@ -33,8 +43,11 @@ impl Default for VehicleHealth {
 
 impl Plugin for VehiclePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_vehicle)
+        app.init_resource::<SpeedModifier>()
+            .add_event::<SpeedModifierEvent>()
+            .add_systems(Startup, spawn_vehicle)
             .add_systems(Update, (
+                handle_speed_modifiers,
                 handle_vehicle_movement,
                 rotate_weapon_turret,
                 update_target_lock,
@@ -122,9 +135,19 @@ fn spawn_vehicle(
 #[derive(Component)]
 pub struct WeaponTurret;
 
+fn handle_speed_modifiers(
+    mut events: EventReader<SpeedModifierEvent>,
+    mut modifier: ResMut<SpeedModifier>,
+) {
+    for event in events.read() {
+        modifier.current_multiplier = event.multiplier;
+    }
+}
+
 fn handle_vehicle_movement(
     input: Res<PlayerInput>,
     time: Res<Time>,
+    modifier: Res<SpeedModifier>,
     mut vehicle_q: Query<(&mut Transform, &mut VehicleVelocity), With<PlayerVehicle>>,
 ) {
     let Ok((mut transform, mut velocity)) = vehicle_q.get_single_mut() else {
@@ -149,8 +172,9 @@ fn handle_vehicle_movement(
         }
     }
 
-    // Clamp speed
-    velocity.current = velocity.current.clamp(-velocity.max_speed * 0.3, velocity.max_speed);
+    // Clamp speed (apply speed modifier)
+    let max_speed = velocity.max_speed * modifier.current_multiplier;
+    velocity.current = velocity.current.clamp(-max_speed * 0.3, max_speed);
 
     // Turning (only when moving)
     if velocity.current.abs() > 0.1 {
@@ -166,6 +190,9 @@ fn handle_vehicle_movement(
     // Apply velocity
     let forward = transform.forward();
     transform.translation += forward * velocity.current * dt;
+
+    // Reset speed modifier to default after applying
+    // This ensures continuous updates from the environment system
 }
 
 fn rotate_weapon_turret(
