@@ -69,15 +69,13 @@ fn handle_shooting(
     vehicle_q: Query<&GlobalTransform, (With<crate::vehicle::PlayerVehicle>, Without<WeaponTurret>)>,
     target_lock: Res<TargetLock>,
     keyboard: Res<ButtonInput<KeyCode>>,
+    dino_q: Query<&GlobalTransform, With<Dinosaur>>,
 ) {
     let current_time = time.elapsed_secs();
 
-    // Check for shooting input (either left click or spacebar)
-    let should_shoot = if target_lock.locked_entity.is_some() {
-        input.shooting || keyboard.pressed(KeyCode::Space)
-    } else {
-        input.shooting
-    };
+    // Check if shooting with locked target (Space) or free aim (Left Click)
+    let shooting_at_lock = keyboard.pressed(KeyCode::Space) && target_lock.locked_entity.is_some();
+    let should_shoot = input.shooting || shooting_at_lock;
 
     if !should_shoot {
         return;
@@ -93,15 +91,31 @@ fn handle_shooting(
         return;
     };
 
-    let Ok(_vehicle_global) = vehicle_q.get_single() else {
+    let Ok(vehicle_global) = vehicle_q.get_single() else {
         return;
     };
 
     // Get world positions
     let turret_pos = turret_global.translation();
+    let _vehicle_pos = vehicle_global.translation();
 
-    // Fire direction from turret's forward vector (in world space)
-    let fire_direction = turret_global.forward();
+    // Determine fire direction
+    let fire_direction = if shooting_at_lock {
+        // Shooting at locked target - aim directly at it
+        if let Some(locked_entity) = target_lock.locked_entity {
+            if let Ok(dino_global) = dino_q.get(locked_entity) {
+                let target_pos = dino_global.translation();
+                (target_pos - turret_pos).normalize()
+            } else {
+                *turret_global.forward()
+            }
+        } else {
+            *turret_global.forward()
+        }
+    } else {
+        // Free aim - use turret's facing direction
+        *turret_global.forward()
+    };
 
     // Bullet origin at turret position, slightly forward
     let bullet_origin = turret_pos + fire_direction * 1.0;
