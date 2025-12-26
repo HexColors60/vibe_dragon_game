@@ -3,6 +3,7 @@ use bevy_rapier3d::prelude::*;
 use bevy::math::Mat3;
 use crate::input::{PlayerInput, TargetLock};
 use crate::dino::Dinosaur;
+use crate::camera::MainCamera;
 
 pub struct VehiclePlugin;
 
@@ -225,54 +226,90 @@ fn update_target_lock(
     mut commands: Commands,
     input: Res<PlayerInput>,
     mut target_lock: ResMut<TargetLock>,
-    vehicle_q: Query<&Transform, With<crate::vehicle::PlayerVehicle>>,
+    camera_q: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     dino_q: Query<(Entity, &GlobalTransform), With<Dinosaur>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    indicator_q: Query<Entity, With<TargetLockIndicator>>,
 ) {
-    // Handle target locking
+    // Handle target locking when right mouse button is pressed
     if input.lock_target {
-        let Ok(vehicle_transform) = vehicle_q.get_single() else {
+        let Ok((_camera, camera_transform)) = camera_q.get_single() else {
             return;
         };
 
-        let vehicle_pos = vehicle_transform.translation;
-
-        // Find closest dinosaur
-        let mut closest_entity: Option<Entity> = None;
-        let mut closest_distance = f32::MAX;
-
-        for (entity, dino_transform) in dino_q.iter() {
-            let dino_pos = dino_transform.translation();
-            let distance = (dino_pos - vehicle_pos).length();
-
-            if distance < closest_distance && distance < 100.0 {
-                closest_distance = distance;
-                closest_entity = Some(entity);
-            }
+        // Remove old indicator if exists
+        for indicator_entity in indicator_q.iter() {
+            commands.entity(indicator_entity).despawn_recursive();
         }
 
-        if let Some(entity) = closest_entity {
-            target_lock.locked_entity = Some(entity);
-            if let Ok((_, transform)) = dino_q.get(entity) {
-                target_lock.lock_position = Some(transform.translation());
-            }
+        // Camera forward direction and position
+        let cam_pos = camera_transform.translation();
+        let cam_forward = camera_transform.forward();
 
-            // Spawn red circle indicator
-            commands.spawn((
-                TargetLockIndicator,
-                Mesh3d(meshes.add(Torus::new(1.5, 0.1))),
-                MeshMaterial3d(materials.add(StandardMaterial {
-                    base_color: Color::srgba(1.0, 0.0, 0.0, 0.8),
-                    unlit: true,
-                    ..default()
-                })),
-                Transform::from_xyz(0.0, 0.5, 0.0),
-            )).set_parent(entity);
-        } else {
+        // Get list of visible dinosaurs (in front of camera)
+        let visible_dinos: Vec<(Entity, Vec3, f32)> = dino_q.iter()
+            .filter_map(|(entity, transform)| {
+                let dino_pos = transform.translation();
+                let to_dino = dino_pos - cam_pos;
+                let distance = to_dino.length();
+
+                // Check if dinosaur is in front of camera (within 90 degree FOV cone)
+                let to_dino_norm = to_dino.normalize();
+                let dot = cam_forward.dot(to_dino_norm);
+
+                if dot > 0.3 && distance < 200.0 {
+                    // Dinosaur is in front of camera and within range
+                    return Some((entity, dino_pos, distance));
+                }
+                None
+            })
+            .collect();
+
+        if visible_dinos.is_empty() {
+            // No visible dinosaurs, clear lock
             target_lock.locked_entity = None;
             target_lock.lock_position = None;
+            return;
         }
+
+        // Sort by distance (closest first)
+        let mut sorted_dinos = visible_dinos;
+        sorted_dinos.sort_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
+
+        // If we already have a lock, cycle to the next visible dinosaur
+        let target_entity = if let Some(current_lock) = target_lock.locked_entity {
+            // Find the current lock's index
+            if let Some(current_idx) = sorted_dinos.iter().position(|(e, _, _)| *e == current_lock) {
+                // Cycle to next dinosaur (loop around)
+                let next_idx = (current_idx + 1) % sorted_dinos.len();
+                sorted_dinos[next_idx].0
+            } else {
+                // Current lock not in visible list, start with closest
+                sorted_dinos[0].0
+            }
+        } else {
+            // No current lock, lock onto closest visible
+            sorted_dinos[0].0
+        };
+
+        // Update the lock
+        target_lock.locked_entity = Some(target_entity);
+        if let Ok((_, transform)) = dino_q.get(target_entity) {
+            target_lock.lock_position = Some(transform.translation());
+        }
+
+        // Spawn red circle indicator for the new target
+        commands.spawn((
+            TargetLockIndicator,
+            Mesh3d(meshes.add(Torus::new(1.5, 0.1))),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color: Color::srgba(1.0, 0.0, 0.0, 0.8),
+                unlit: true,
+                ..default()
+            })),
+            Transform::from_xyz(0.0, 0.5, 0.0),
+        )).set_parent(target_entity);
     }
 }
 
