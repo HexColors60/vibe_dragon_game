@@ -389,17 +389,15 @@ impl DamageReaction {
 
 fn update_dino_ai(
     time: Res<Time>,
-    mut dino_q: Query<(&mut DinoAI, &Transform)>,
-    vehicle_q: Query<&Transform, (With<super::vehicle::PlayerVehicle>, Without<Dinosaur>)>,
+    mut queries: ParamSet<(
+        Query<(&mut DinoAI, &Transform)>,
+        Query<&Transform, (With<super::vehicle::PlayerVehicle>, Without<Dinosaur>)>,
+    )>,
 ) {
-    let Ok(vehicle_transform) = vehicle_q.get_single() else {
-        return;
-    };
-
-    let vehicle_pos = vehicle_transform.translation;
+    let vehicle_pos = queries.p1().get_single().map(|t| t.translation).unwrap_or(Vec3::ZERO);
     let mut rng = rand::thread_rng();
 
-    for (mut ai, transform) in dino_q.iter_mut() {
+    for (mut ai, transform) in queries.p0().iter_mut() {
         if ai.state == AIState::Dead {
             continue;
         }
@@ -463,16 +461,15 @@ fn update_damage_reaction(
 
 fn update_dino_movement(
     time: Res<Time>,
-    mut dino_q: Query<(&mut Transform, &DinoAI, Option<&DamageReaction>)>,
-    vehicle_q: Query<&Transform, (With<super::vehicle::PlayerVehicle>, Without<Dinosaur>)>,
+    mut queries: ParamSet<(
+        Query<(&mut Transform, &DinoAI, Option<&DamageReaction>)>,
+        Query<&Transform, (With<super::vehicle::PlayerVehicle>, Without<Dinosaur>)>,
+    )>,
 ) {
     let dt = time.delta_secs();
-    let Ok(vehicle_transform) = vehicle_q.get_single() else {
-        return;
-    };
-    let vehicle_pos = vehicle_transform.translation;
+    let vehicle_pos = queries.p1().get_single().map(|t| t.translation).unwrap_or(Vec3::ZERO);
 
-    for (mut transform, ai, damage_reaction) in dino_q.iter_mut() {
+    for (mut transform, ai, damage_reaction) in queries.p0().iter_mut() {
         if ai.state == AIState::Dead || ai.state == AIState::Idle {
             continue;
         }
@@ -517,15 +514,14 @@ fn update_dino_movement(
 fn process_dino_attacks(
     time: Res<Time>,
     mut dino_q: Query<(Entity, &mut DinoAI, &Transform, &DinoSpecies)>,
-    vehicle_q: Query<&Transform, With<super::vehicle::PlayerVehicle>>,
-    mut vehicle_health_q: Query<&mut super::vehicle::VehicleHealth>,
+    mut vehicle_queries: ParamSet<(
+        Query<&Transform, With<super::vehicle::PlayerVehicle>>,
+        Query<&mut super::vehicle::VehicleHealth>,
+    )>,
     mut attack_events: EventWriter<DinoAttackEvent>,
     mut hit_feedback: EventWriter<crate::effects::HitFeedbackEvent>,
 ) {
-    let Ok(vehicle_transform) = vehicle_q.get_single() else {
-        return;
-    };
-    let vehicle_pos = vehicle_transform.translation;
+    let vehicle_pos = vehicle_queries.p0().get_single().map(|t| t.translation).unwrap_or(Vec3::ZERO);
 
     for (entity, mut ai, dino_transform, species) in dino_q.iter_mut() {
         if ai.state != AIState::Attack {
@@ -545,7 +541,7 @@ fn process_dino_attacks(
             };
 
             // Apply damage to vehicle
-            if let Ok(mut vehicle_health) = vehicle_health_q.get_single_mut() {
+            if let Ok(mut vehicle_health) = vehicle_queries.p1().get_single_mut() {
                 vehicle_health.current -= damage;
                 vehicle_health.current = vehicle_health.current.max(0.0);
 
