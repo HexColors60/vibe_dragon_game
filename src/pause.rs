@@ -247,7 +247,6 @@ fn handle_restart_game(
     mut commands: Commands,
     dino_q: Query<Entity, With<crate::dino::Dinosaur>>,
     bullet_q: Query<Entity, With<crate::weapon::Bullet>>,
-    particle_q: Query<Entity, With<crate::weapon::BloodParticle>>,
     mut score: ResMut<crate::GameScore>,
     mut target_lock: ResMut<crate::input::TargetLock>,
     mut respawn_events: EventWriter<RespawnDinosEvent>,
@@ -270,10 +269,8 @@ fn handle_restart_game(
             commands.entity(entity).despawn_recursive();
         }
 
-        // Despawn all particles
-        for entity in particle_q.iter() {
-            commands.entity(entity).despawn_recursive();
-        }
+        // Note: Blood particles will despawn themselves on their timer
+        // No need to manually despawn them
 
         // Respawn dinosaurs
         respawn_events.send(RespawnDinosEvent);
