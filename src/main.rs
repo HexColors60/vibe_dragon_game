@@ -8,6 +8,9 @@ mod dino;
 mod weapon;
 mod ui;
 mod pause;
+mod weapon_system;
+mod damage_popup;
+mod combo;
 
 use camera::CameraPlugin;
 use input::InputPlugin;
@@ -16,6 +19,9 @@ use dino::DinoPlugin;
 use weapon::WeaponPlugin;
 use ui::UIPlugin;
 use pause::{PausePlugin, GameState};
+use weapon_system::WeaponInventory;
+use combo::ComboPlugin;
+use damage_popup::DamagePopupPlugin;
 
 fn main() {
     App::new()
@@ -24,6 +30,7 @@ fn main() {
         .add_plugins(RapierDebugRenderPlugin::default())
         .insert_resource(ClearColor(Color::srgb(0.52, 0.77, 0.98)))
         .insert_resource(GameScore { score: 0 })
+        .init_resource::<WeaponInventory>()
         .add_plugins((
             CameraPlugin,
             InputPlugin,
@@ -32,6 +39,8 @@ fn main() {
             WeaponPlugin,
             UIPlugin,
             PausePlugin,
+            ComboPlugin,
+            DamagePopupPlugin,
         ))
         .add_systems(Startup, setup)
         .add_systems(Update, update_score)

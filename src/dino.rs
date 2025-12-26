@@ -4,6 +4,7 @@ use rand::Rng;
 use crate::weapon::BulletHitEvent;
 use crate::GameScore;
 use crate::pause::GameState;
+use crate::combo::ComboSystem;
 
 pub struct DinoPlugin;
 
@@ -236,6 +237,7 @@ fn handle_bullet_hits(
     mut events: EventReader<BulletHitEvent>,
     mut dino_q: Query<(&mut DinoHealth, &mut DinoAI)>,
     mut score: ResMut<GameScore>,
+    mut combo: ResMut<ComboSystem>,
     _meshes: ResMut<Assets<Mesh>>,
     _materials: ResMut<Assets<StandardMaterial>>,
 ) {
@@ -251,13 +253,19 @@ fn handle_bullet_hits(
             if health.current <= 0.0 {
                 ai.state = AIState::Dead;
 
-                // Add score based on hit part (headshot bonus)
-                let score_gain = match event.hit_part {
+                // Add combo kill
+                combo.add_kill();
+
+                // Calculate base score
+                let base_score = match event.hit_part {
                     BodyPart::Head => 200,
                     BodyPart::Body => 100,
                     BodyPart::Legs => 50,
                 };
-                score.score += score_gain;
+
+                // Apply combo multiplier
+                let final_score = (base_score as f32 * combo.get_score_multiplier()) as u32;
+                score.score += final_score;
 
                 // Add death animation component
                 commands.entity(event.target).insert(DinoDeath {

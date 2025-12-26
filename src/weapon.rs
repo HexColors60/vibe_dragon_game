@@ -3,6 +3,7 @@ use crate::dino::{BodyPart, HitBox, Dinosaur};
 use crate::vehicle::WeaponTurret;
 use crate::input::TargetLock;
 use crate::pause::GameState;
+use crate::weapon_system::WeaponInventory;
 
 pub struct WeaponPlugin;
 
@@ -17,14 +18,12 @@ pub struct BulletHitEvent {
 #[derive(Resource)]
 struct WeaponState {
     last_shot: f32,
-    fire_rate: f32,
 }
 
 impl Default for WeaponState {
     fn default() -> Self {
         Self {
             last_shot: 0.0,
-            fire_rate: 0.1,
         }
     }
 }
@@ -33,6 +32,7 @@ impl Default for WeaponState {
 pub struct Bullet {
     pub lifetime: Timer,
     pub damage: f32,
+    pub weapon_type: crate::weapon_system::WeaponType,
 }
 
 #[derive(Component)]
@@ -45,17 +45,34 @@ pub struct BloodParticle {
     pub lifetime: Timer,
 }
 
+/// For rocket delayed explosions
+#[derive(Component)]
+pub struct Rocket {
+    pub timer: Timer,
+    pub damage: f32,
+    pub explosion_radius: f32,
+}
+
 impl Plugin for WeaponPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<WeaponState>()
             .add_event::<BulletHitEvent>()
+            .add_event::<RocketExplosionEvent>()
             .add_systems(Update, (
                 handle_shooting,
                 update_bullets,
                 check_bullet_collisions,
                 update_blood_particles,
+                update_rockets,
             ).chain().run_if(in_state(GameState::Playing)));
     }
+}
+
+#[derive(Event)]
+pub struct RocketExplosionEvent {
+    pub position: Vec3,
+    pub damage: f32,
+    pub radius: f32,
 }
 
 fn handle_shooting(
@@ -70,6 +87,7 @@ fn handle_shooting(
     target_lock: Res<TargetLock>,
     keyboard: Res<ButtonInput<KeyCode>>,
     dino_q: Query<&GlobalTransform, With<Dinosaur>>,
+    weapon_inv: Res<WeaponInventory>,
 ) {
     let current_time = time.elapsed_secs();
 
@@ -81,7 +99,10 @@ fn handle_shooting(
         return;
     }
 
-    if current_time - weapon_state.last_shot < weapon_state.fire_rate {
+    let current_weapon = weapon_inv.current_weapon;
+    let fire_rate = current_weapon.fire_rate();
+
+    if current_time - weapon_state.last_shot < fire_rate {
         return;
     }
 
@@ -91,13 +112,12 @@ fn handle_shooting(
         return;
     };
 
-    let Ok(vehicle_global) = vehicle_q.get_single() else {
+    let Ok(_vehicle_global) = vehicle_q.get_single() else {
         return;
     };
 
     // Get world positions
     let turret_pos = turret_global.translation();
-    let _vehicle_pos = vehicle_global.translation();
 
     // Determine fire direction
     let fire_direction = if shooting_at_lock {
@@ -117,29 +137,77 @@ fn handle_shooting(
         *turret_global.forward()
     };
 
-    // Bullet origin at turret position, slightly forward
-    let bullet_origin = turret_pos + fire_direction * 1.0;
+    let base_damage = current_weapon.damage();
+    let pellet_count = current_weapon.pellet_count();
+    let spread = current_weapon.spread();
+    let bullet_speed = current_weapon.bullet_speed();
+    let bullet_radius = current_weapon.bullet_radius();
 
-    // Spawn bullet with custom velocity component
-    let bullet_speed = 100.0;
-    commands.spawn((
-        Bullet {
-            lifetime: Timer::from_seconds(3.0, TimerMode::Once),
-            damage: 10.0,
-        },
-        BulletVelocity {
-            vec: fire_direction * bullet_speed,
-        },
-        Mesh3d(meshes.add(Sphere { radius: 0.2 })),
-        MeshMaterial3d(materials.add(Color::srgb(1.0, 0.8, 0.2))),
-        Transform::from_translation(bullet_origin),
-    ));
+    // Spawn bullets
+    for i in 0..pellet_count {
+        let bullet_origin = turret_pos + fire_direction * 1.0;
+
+        // Apply spread for shotgun
+        let bullet_direction = if spread > 0.0 && pellet_count > 1 {
+            let spread_angle = spread;
+            let horizontal_angle = (i as f32 / pellet_count as f32 - 0.5) * spread_angle;
+            let vertical_angle = (rand::random::<f32>() - 0.5) * spread_angle * 0.5;
+
+            let mut dir = fire_direction;
+            dir = Quat::from_rotation_y(horizontal_angle) * dir;
+            dir = Quat::from_rotation_x(vertical_angle) * dir;
+            dir.normalize()
+        } else {
+            fire_direction
+        };
+
+        // Rocket launcher creates rockets instead of bullets
+        if current_weapon.explosive() {
+            commands.spawn((
+                Bullet {
+                    lifetime: Timer::from_seconds(5.0, TimerMode::Once),
+                    damage: base_damage,
+                    weapon_type: current_weapon,
+                },
+                Rocket {
+                    timer: Timer::from_seconds(current_weapon.rocket_delay(), TimerMode::Once),
+                    damage: base_damage,
+                    explosion_radius: current_weapon.explosion_radius(),
+                },
+                BulletVelocity {
+                    vec: bullet_direction * bullet_speed,
+                },
+                Mesh3d(meshes.add(Sphere { radius: bullet_radius })),
+                MeshMaterial3d(materials.add(Color::srgb(1.0, 0.3, 0.1))),
+                Transform::from_translation(bullet_origin),
+            ));
+        } else {
+            // Normal bullets
+            commands.spawn((
+                Bullet {
+                    lifetime: Timer::from_seconds(3.0, TimerMode::Once),
+                    damage: base_damage,
+                    weapon_type: current_weapon,
+                },
+                BulletVelocity {
+                    vec: bullet_direction * bullet_speed,
+                },
+                Mesh3d(meshes.add(Sphere { radius: bullet_radius })),
+                MeshMaterial3d(materials.add(if current_weapon == crate::weapon_system::WeaponType::Shotgun {
+                    Color::srgb(0.8, 0.6, 0.3) // Buckshot color
+                } else {
+                    Color::srgb(1.0, 0.8, 0.2) // Machine gun color
+                })),
+                Transform::from_translation(bullet_origin),
+            ));
+        }
+    }
 }
 
 fn update_bullets(
     time: Res<Time>,
     mut commands: Commands,
-    mut bullet_q: Query<(Entity, &mut Bullet, &mut Transform, &BulletVelocity)>,
+    mut bullet_q: Query<(Entity, &mut Bullet, &mut Transform, &BulletVelocity), Without<Rocket>>,
 ) {
     let dt = time.delta_secs();
 
@@ -156,6 +224,33 @@ fn update_bullets(
     }
 }
 
+fn update_rockets(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut rocket_q: Query<(Entity, &mut Rocket, &mut Transform, &BulletVelocity)>,
+    mut explosion_events: EventWriter<RocketExplosionEvent>,
+) {
+    let dt = time.delta_secs();
+
+    for (entity, mut rocket, mut transform, velocity) in rocket_q.iter_mut() {
+        // Move rocket
+        transform.translation += velocity.vec * dt;
+
+        // Update explosion timer
+        rocket.timer.tick(time.delta());
+
+        if rocket.timer.finished() {
+            // Trigger explosion
+            explosion_events.send(RocketExplosionEvent {
+                position: transform.translation,
+                damage: rocket.damage,
+                radius: rocket.explosion_radius,
+            });
+            commands.entity(entity).despawn_recursive();
+        }
+    }
+}
+
 fn check_bullet_collisions(
     mut commands: Commands,
     mut bullet_q: Query<(Entity, &Bullet, &Transform)>,
@@ -165,8 +260,43 @@ fn check_bullet_collisions(
     mut hit_events: EventWriter<BulletHitEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut explosion_events: EventReader<RocketExplosionEvent>,
 ) {
-    for (bullet_entity, _bullet, bullet_transform) in bullet_q.iter_mut() {
+    // Handle rocket explosions first
+    for event in explosion_events.read() {
+        // Find all dinosaurs in explosion radius
+        for (dino_entity, dino_global) in dino_q.iter() {
+            let dino_pos = dino_global.translation();
+            let distance = (dino_pos - event.position).length();
+
+            if distance < event.radius {
+                // Damage decreases with distance
+                let falloff = 1.0 - (distance / event.radius);
+                let damage = event.damage * falloff;
+
+                hit_events.send(BulletHitEvent {
+                    target: dino_entity,
+                    damage,
+                    position: event.position,
+                    hit_part: BodyPart::Body, // Explosion hits body
+                });
+
+                // Spawn blood particles
+                spawn_blood_particles(&mut commands, &mut meshes, &mut materials, dino_pos);
+            }
+        }
+
+        // Spawn explosion particles
+        spawn_explosion_particles(&mut commands, &mut meshes, &mut materials, event.position);
+    }
+
+    // Handle bullet collisions
+    for (bullet_entity, bullet, bullet_transform) in bullet_q.iter_mut() {
+        // Skip rockets (they're handled by update_rockets)
+        if bullet.weapon_type.explosive() {
+            continue;
+        }
+
         let bullet_pos = bullet_transform.translation;
 
         // Check collision with all dinosaurs
@@ -254,6 +384,39 @@ fn spawn_blood_particles(
             Mesh3d(meshes.add(Sphere { radius: 0.15 })),
             MeshMaterial3d(blood_material.clone()),
             Transform::from_translation(position + offset).with_scale(Vec3::splat(0.5)),
+        ));
+    }
+}
+
+fn spawn_explosion_particles(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    position: Vec3,
+) {
+    let explosion_material = materials.add(Color::srgba(1.0, 0.5, 0.1, 0.9));
+
+    for _ in 0..20 {
+        let offset = Vec3::new(
+            rand::random::<f32>() * 0.5 - 0.25,
+            rand::random::<f32>() * 0.5,
+            rand::random::<f32>() * 0.5 - 0.25,
+        );
+
+        let velocity = Vec3::new(
+            rand::random::<f32>() * 10.0 - 5.0,
+            rand::random::<f32>() * 8.0 + 3.0,
+            rand::random::<f32>() * 10.0 - 5.0,
+        );
+
+        commands.spawn((
+            BloodParticle {
+                lifetime: Timer::from_seconds(0.6, TimerMode::Once),
+            },
+            BulletVelocity { vec: velocity },
+            Mesh3d(meshes.add(Sphere { radius: 0.3 })),
+            MeshMaterial3d(explosion_material.clone()),
+            Transform::from_translation(position + offset).with_scale(Vec3::splat(0.8)),
         ));
     }
 }

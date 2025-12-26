@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy::window::CursorGrabMode;
 use bevy::input::mouse::MouseMotion;
+use crate::weapon_system::{WeaponType, WeaponSwitchedEvent, WeaponInventory};
+use crate::pause::GameState;
 
 pub struct InputPlugin;
 
@@ -16,6 +18,11 @@ pub struct PlayerInput {
     pub turret_right: bool,
     pub lock_target: bool,
     pub pause: bool,
+    pub weapon_switch_1: bool,
+    pub weapon_switch_2: bool,
+    pub weapon_switch_3: bool,
+    pub weapon_next: bool,
+    pub weapon_prev: bool,
 }
 
 #[derive(Resource, Default)]
@@ -28,12 +35,14 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<PlayerInput>()
             .init_resource::<TargetLock>()
+            .add_event::<WeaponSwitchedEvent>()
             .add_systems(Startup, grab_cursor)
             .add_systems(Update, (
                 handle_key_input,
                 handle_mouse_input,
                 handle_mouse_motion,
-            ));
+                handle_weapon_switching,
+            ).run_if(in_state(GameState::Playing)));
     }
 }
 
@@ -56,6 +65,11 @@ fn handle_key_input(
     input.turret_left = keyboard.pressed(KeyCode::KeyQ);
     input.turret_right = keyboard.pressed(KeyCode::KeyE);
     input.pause = keyboard.just_pressed(KeyCode::Escape);
+
+    // Weapon switching
+    input.weapon_switch_1 = keyboard.just_pressed(KeyCode::Digit1);
+    input.weapon_switch_2 = keyboard.just_pressed(KeyCode::Digit2);
+    input.weapon_switch_3 = keyboard.just_pressed(KeyCode::Digit3);
 }
 
 fn handle_mouse_input(
@@ -72,5 +86,28 @@ fn handle_mouse_motion(
 ) {
     for event in mouse_motion.read() {
         input.mouse_position += event.delta;
+    }
+}
+
+fn handle_weapon_switching(
+    input: Res<PlayerInput>,
+    mut weapon_inventory: ResMut<WeaponInventory>,
+    mut weapon_events: EventWriter<WeaponSwitchedEvent>,
+) {
+    let mut switched = None;
+
+    if input.weapon_switch_1 {
+        weapon_inventory.switch_to(WeaponType::MachineGun);
+        switched = Some(WeaponType::MachineGun);
+    } else if input.weapon_switch_2 {
+        weapon_inventory.switch_to(WeaponType::Shotgun);
+        switched = Some(WeaponType::Shotgun);
+    } else if input.weapon_switch_3 {
+        weapon_inventory.switch_to(WeaponType::RocketLauncher);
+        switched = Some(WeaponType::RocketLauncher);
+    }
+
+    if let Some(weapon) = switched {
+        weapon_events.send(WeaponSwitchedEvent { new_weapon: weapon });
     }
 }
