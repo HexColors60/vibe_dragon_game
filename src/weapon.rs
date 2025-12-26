@@ -93,13 +93,12 @@ fn handle_shooting(
         return;
     };
 
-    let Ok(vehicle_global) = vehicle_q.get_single() else {
+    let Ok(_vehicle_global) = vehicle_q.get_single() else {
         return;
     };
 
     // Get world positions
     let turret_pos = turret_global.translation();
-    let _vehicle_pos = vehicle_global.translation();
 
     // Fire direction from turret's forward vector (in world space)
     let fire_direction = turret_global.forward();
@@ -117,7 +116,7 @@ fn handle_shooting(
         BulletVelocity {
             vec: fire_direction * bullet_speed,
         },
-        Mesh3d(meshes.add(Sphere { radius: 0.15 })),
+        Mesh3d(meshes.add(Sphere { radius: 0.2 })),
         MeshMaterial3d(materials.add(Color::srgb(1.0, 0.8, 0.2))),
         Transform::from_translation(bullet_origin),
     ));
@@ -146,9 +145,9 @@ fn update_bullets(
 fn check_bullet_collisions(
     mut commands: Commands,
     mut bullet_q: Query<(Entity, &Bullet, &Transform)>,
-    hitbox_q: Query<(&HitBox, &Parent)>,
-    dino_q: Query<&GlobalTransform, With<Dinosaur>>,
-    parent_q: Query<&Parent>,
+    dino_q: Query<(Entity, &GlobalTransform), With<Dinosaur>>,
+    hitbox_q: Query<(&HitBox, &GlobalTransform, &Parent)>,
+    _parent_q: Query<&Parent>,
     mut hit_events: EventWriter<BulletHitEvent>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -157,28 +156,38 @@ fn check_bullet_collisions(
         let bullet_pos = bullet_transform.translation;
 
         // Check collision with all dinosaurs
-        for (hit_box, parent) in hitbox_q.iter() {
-            // Get the dinosaur entity
-            let Ok(dino_parent) = parent_q.get(parent.get()) else { continue };
+        for (dino_entity, dino_global) in dino_q.iter() {
+            let dino_pos = dino_global.translation();
 
-            // Get dinosaur position
-            let Ok(dino_transform) = dino_q.get(dino_parent.get()) else { continue };
-            let dino_pos = dino_transform.translation();
-
-            // Simple distance check for collision
+            // Simple distance check for collision (larger hitbox)
             let distance = (bullet_pos - dino_pos).length();
 
-            // Hit detection threshold
-            if distance < 2.5 {
+            // Hit detection threshold - generous hitbox
+            if distance < 4.0 {
+                // Find which body part was hit by checking all hitboxes
+                let mut hit_part = BodyPart::Body; // default
+                let mut found_hit = false;
+
+                for (hit_box, hitbox_global, _parent) in hitbox_q.iter() {
+                    let hitbox_pos = hitbox_global.translation();
+                    let hitbox_distance = (bullet_pos - hitbox_pos).length();
+
+                    if hitbox_distance < 1.5 {
+                        hit_part = hit_box.part;
+                        found_hit = true;
+                        break;
+                    }
+                }
+
                 // Calculate damage based on body part
-                let damage = calculate_damage(hit_box.part);
+                let damage = calculate_damage(if found_hit { hit_part } else { BodyPart::Body });
 
                 // Send hit event
                 hit_events.send(BulletHitEvent {
-                    target: dino_parent.get(),
+                    target: dino_entity,
                     damage,
                     position: bullet_pos,
-                    hit_part: hit_box.part,
+                    hit_part: hit_part,
                 });
 
                 // Spawn blood particles
@@ -210,27 +219,27 @@ fn spawn_blood_particles(
 ) {
     let blood_material = materials.add(Color::srgba(0.6, 0.05, 0.05, 0.8));
 
-    for _ in 0..8 {
+    for _ in 0..12 {
         let offset = Vec3::new(
-            rand::random::<f32>() * 0.5 - 0.25,
-            rand::random::<f32>() * 0.5,
-            rand::random::<f32>() * 0.5 - 0.25,
+            rand::random::<f32>() * 0.8 - 0.4,
+            rand::random::<f32>() * 0.8,
+            rand::random::<f32>() * 0.8 - 0.4,
         );
 
         let velocity = Vec3::new(
-            rand::random::<f32>() * 4.0 - 2.0,
-            rand::random::<f32>() * 4.0 + 1.0,
-            rand::random::<f32>() * 4.0 - 2.0,
+            rand::random::<f32>() * 6.0 - 3.0,
+            rand::random::<f32>() * 6.0 + 2.0,
+            rand::random::<f32>() * 6.0 - 3.0,
         );
 
         commands.spawn((
             BloodParticle {
-                lifetime: Timer::from_seconds(0.5, TimerMode::Once),
+                lifetime: Timer::from_seconds(0.8, TimerMode::Once),
             },
             BulletVelocity { vec: velocity },
-            Mesh3d(meshes.add(Sphere { radius: 0.12 })),
+            Mesh3d(meshes.add(Sphere { radius: 0.15 })),
             MeshMaterial3d(blood_material.clone()),
-            Transform::from_translation(position + offset).with_scale(Vec3::splat(0.4)),
+            Transform::from_translation(position + offset).with_scale(Vec3::splat(0.5)),
         ));
     }
 }
@@ -259,6 +268,6 @@ fn update_blood_particles(
         let elapsed = particle.lifetime.elapsed_secs();
         let duration = particle.lifetime.duration().as_secs_f32();
         let scale = 1.0 - (elapsed / duration);
-        transform.scale = Vec3::splat(scale * 0.4);
+        transform.scale = Vec3::splat(scale * 0.5);
     }
 }
