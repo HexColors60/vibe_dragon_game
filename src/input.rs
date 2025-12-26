@@ -21,8 +21,7 @@ pub struct PlayerInput {
     pub weapon_switch_1: bool,
     pub weapon_switch_2: bool,
     pub weapon_switch_3: bool,
-    pub weapon_next: bool,
-    pub weapon_prev: bool,
+    pub weapon_scroll: f32, // Positive = next weapon, Negative = previous
 }
 
 #[derive(Resource, Default)]
@@ -41,6 +40,7 @@ impl Plugin for InputPlugin {
                 handle_key_input,
                 handle_mouse_input,
                 handle_mouse_motion,
+                handle_mouse_wheel,
                 handle_weapon_switching,
             ).run_if(in_state(GameState::Playing)));
     }
@@ -89,6 +89,16 @@ fn handle_mouse_motion(
     }
 }
 
+fn handle_mouse_wheel(
+    mut input: ResMut<PlayerInput>,
+    mut mouse_wheel: EventReader<bevy::input::mouse::MouseWheel>,
+) {
+    for event in mouse_wheel.read() {
+        // Accumulate scroll value
+        input.weapon_scroll += event.y;
+    }
+}
+
 fn handle_weapon_switching(
     input: Res<PlayerInput>,
     mut weapon_inventory: ResMut<WeaponInventory>,
@@ -96,6 +106,7 @@ fn handle_weapon_switching(
 ) {
     let mut switched = None;
 
+    // Check keyboard shortcuts first
     if input.weapon_switch_1 {
         weapon_inventory.switch_to(WeaponType::MachineGun);
         switched = Some(WeaponType::MachineGun);
@@ -105,6 +116,15 @@ fn handle_weapon_switching(
     } else if input.weapon_switch_3 {
         weapon_inventory.switch_to(WeaponType::RocketLauncher);
         switched = Some(WeaponType::RocketLauncher);
+    }
+    // Check mouse wheel
+    else if input.weapon_scroll.abs() > 0.1 {
+        if input.weapon_scroll > 0.0 {
+            weapon_inventory.next_weapon();
+        } else {
+            weapon_inventory.previous_weapon();
+        }
+        switched = Some(weapon_inventory.current_weapon);
     }
 
     if let Some(weapon) = switched {

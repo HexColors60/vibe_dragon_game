@@ -19,6 +19,18 @@ pub struct VehicleVelocity {
     pub turn_speed: f32,
 }
 
+#[derive(Component)]
+pub struct VehicleHealth {
+    pub current: f32,
+    pub max: f32,
+}
+
+impl Default for VehicleHealth {
+    fn default() -> Self {
+        Self { current: 100.0, max: 100.0 }
+    }
+}
+
 impl Plugin for VehiclePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_vehicle)
@@ -52,6 +64,7 @@ fn spawn_vehicle(
             deceleration: 10.0,
             turn_speed: 2.5,
         },
+        VehicleHealth::default(),
         RigidBody::KinematicPositionBased,
         Collider::cuboid(2.0, 1.0, 4.0),
         Friction::new(0.8),

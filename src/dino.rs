@@ -6,6 +6,17 @@ use crate::GameScore;
 use crate::pause::GameState;
 use crate::combo::ComboSystem;
 
+#[derive(Resource)]
+pub struct CoinSystem {
+    pub total_coins: u32,
+}
+
+impl Default for CoinSystem {
+    fn default() -> Self {
+        Self { total_coins: 0 }
+    }
+}
+
 pub struct DinoPlugin;
 
 #[derive(Component)]
@@ -16,6 +27,8 @@ pub enum DinoSpecies {
     Triceratops,
     Velociraptor,
     Brachiosaurus,
+    Stegosaurus,
+    TRex, // Boss
 }
 
 #[derive(Component)]
@@ -77,6 +90,7 @@ impl Default for DinoSpawnConfig {
 impl Plugin for DinoPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<DinoSpawnConfig>()
+            .init_resource::<CoinSystem>()
             .add_event::<RespawnDinosEvent>()
             .add_systems(Startup, spawn_dinosaurs)
             .add_systems(Update, (
@@ -100,12 +114,20 @@ fn spawn_dinosaurs(
 ) {
     let mut rng = rand::thread_rng();
 
-    // Spawn dinosaurs
-    for _ in 0..15 {
-        let species = match rng.gen_range(0..3) {
-            0 => DinoSpecies::Triceratops,
-            1 => DinoSpecies::Velociraptor,
-            _ => DinoSpecies::Brachiosaurus,
+    // Spawn dinosaurs (now 5 species)
+    for i in 0..15 {
+        // Spawn T-Rex Boss only once (first dinosaur)
+        let species = if i == 0 && rng.gen_range(0..10) < 3 {
+            // 30% chance for T-Rex to spawn as first dinosaur
+            DinoSpecies::TRex
+        } else {
+            match rng.gen_range(0..5) {
+                0 => DinoSpecies::Triceratops,
+                1 => DinoSpecies::Velociraptor,
+                2 => DinoSpecies::Brachiosaurus,
+                3 => DinoSpecies::Stegosaurus,
+                _ => DinoSpecies::Triceratops, // Weight toward Triceratops
+            }
         };
 
         let x: f32 = rng.gen_range(-150.0..150.0);
@@ -131,6 +153,8 @@ fn spawn_dinosaur(
         DinoSpecies::Triceratops => (Color::srgb(0.5, 0.35, 0.2), Vec3::new(1.5, 1.2, 2.5), 150.0, 8.0),
         DinoSpecies::Velociraptor => (Color::srgb(0.4, 0.3, 0.25), Vec3::new(0.6, 0.5, 1.2), 60.0, 15.0),
         DinoSpecies::Brachiosaurus => (Color::srgb(0.45, 0.4, 0.3), Vec3::new(2.5, 4.0, 4.0), 300.0, 4.0),
+        DinoSpecies::Stegosaurus => (Color::srgb(0.35, 0.4, 0.25), Vec3::new(1.8, 1.0, 3.0), 200.0, 6.0),
+        DinoSpecies::TRex => (Color::srgb(0.5, 0.3, 0.2), Vec3::new(2.2, 2.0, 3.5), 500.0, 10.0),
     };
 
     let body_material = materials.add(body_color);
@@ -170,6 +194,8 @@ fn spawn_dinosaur(
         DinoSpecies::Triceratops => Vec3::new(0.0, size.y * 0.7, size.z * 0.4),
         DinoSpecies::Velociraptor => Vec3::new(0.0, size.y * 0.8, size.z * 0.5),
         DinoSpecies::Brachiosaurus => Vec3::new(0.0, size.y * 0.9, size.z * 0.4),
+        DinoSpecies::Stegosaurus => Vec3::new(0.0, size.y * 0.6, size.z * 0.35),
+        DinoSpecies::TRex => Vec3::new(0.0, size.y * 0.75, size.z * 0.45),
     };
 
     commands.spawn((
@@ -212,11 +238,18 @@ fn handle_respawn_dinos(
     for _event in events.read() {
         let mut rng = rand::thread_rng();
 
-        for _ in 0..config.count {
-            let species = match rng.gen_range(0..3) {
-                0 => DinoSpecies::Triceratops,
-                1 => DinoSpecies::Velociraptor,
-                _ => DinoSpecies::Brachiosaurus,
+        for i in 0..config.count {
+            // First dinosaur might be a T-Rex
+            let species = if i == 0 && rng.gen_range(0..10) < 3 {
+                DinoSpecies::TRex
+            } else {
+                match rng.gen_range(0..5) {
+                    0 => DinoSpecies::Triceratops,
+                    1 => DinoSpecies::Velociraptor,
+                    2 => DinoSpecies::Brachiosaurus,
+                    3 => DinoSpecies::Stegosaurus,
+                    _ => DinoSpecies::Triceratops,
+                }
             };
 
             let x: f32 = rng.gen_range(-config.spawn_radius..config.spawn_radius);
@@ -235,14 +268,15 @@ fn handle_respawn_dinos(
 fn handle_bullet_hits(
     mut commands: Commands,
     mut events: EventReader<BulletHitEvent>,
-    mut dino_q: Query<(&mut DinoHealth, &mut DinoAI)>,
+    mut dino_q: Query<(&mut DinoHealth, &mut DinoAI, &DinoSpecies)>,
     mut score: ResMut<GameScore>,
     mut combo: ResMut<ComboSystem>,
+    mut coins: ResMut<CoinSystem>,
     _meshes: ResMut<Assets<Mesh>>,
     _materials: ResMut<Assets<StandardMaterial>>,
 ) {
     for event in events.read() {
-        if let Ok((mut health, mut ai)) = dino_q.get_mut(event.target) {
+        if let Ok((mut health, mut ai, species)) = dino_q.get_mut(event.target) {
             health.current -= event.damage;
 
             // Visual feedback - flash red
@@ -256,16 +290,28 @@ fn handle_bullet_hits(
                 // Add combo kill
                 combo.add_kill();
 
-                // Calculate base score
-                let base_score = match event.hit_part {
-                    BodyPart::Head => 200,
-                    BodyPart::Body => 100,
-                    BodyPart::Legs => 50,
+                // Calculate base score and coins based on species
+                let (base_score, coin_reward) = match species {
+                    DinoSpecies::Velociraptor => (150, 15),
+                    DinoSpecies::Triceratops => (200, 20),
+                    DinoSpecies::Stegosaurus => (175, 25),
+                    DinoSpecies::Brachiosaurus => (400, 30),
+                    DinoSpecies::TRex => (1000, 100), // Boss gives huge rewards
                 };
 
-                // Apply combo multiplier
+                // Apply hit part multiplier to score
+                let base_score = match event.hit_part {
+                    BodyPart::Head => base_score * 2,
+                    BodyPart::Body => base_score,
+                    BodyPart::Legs => base_score / 2,
+                };
+
+                // Apply combo multiplier to score
                 let final_score = (base_score as f32 * combo.get_score_multiplier()) as u32;
                 score.score += final_score;
+
+                // Add coins (not affected by combo or hit part)
+                coins.total_coins += coin_reward;
 
                 // Add death animation component
                 commands.entity(event.target).insert(DinoDeath {
@@ -386,6 +432,8 @@ fn update_dino_death_animation(
             DinoSpecies::Triceratops => 1.2,
             DinoSpecies::Velociraptor => 0.5,
             DinoSpecies::Brachiosaurus => 4.0,
+            DinoSpecies::Stegosaurus => 1.0,
+            DinoSpecies::TRex => 2.0,
         };
         transform.translation.y = (height * 0.5) * (1.0 - progress * 0.8);
 
