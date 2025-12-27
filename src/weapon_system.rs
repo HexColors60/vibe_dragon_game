@@ -110,6 +110,10 @@ impl WeaponInventory {
     }
 
     pub fn next_weapon(&mut self) {
+        if self.unlocked_weapons.is_empty() {
+            return;
+        }
+
         let current_idx = self.unlocked_weapons.iter()
             .position(|w| *w == self.current_weapon)
             .unwrap_or(0);
@@ -119,6 +123,10 @@ impl WeaponInventory {
     }
 
     pub fn previous_weapon(&mut self) {
+        if self.unlocked_weapons.is_empty() {
+            return;
+        }
+
         let current_idx = self.unlocked_weapons.iter()
             .position(|w| *w == self.current_weapon)
             .unwrap_or(0);
