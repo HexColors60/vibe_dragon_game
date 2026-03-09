@@ -22,6 +22,8 @@ pub struct PlayerInput {
     pub weapon_switch_2: bool,
     pub weapon_switch_3: bool,
     pub weapon_scroll: f32, // Positive = next weapon, Negative = previous
+    pub camera_up: bool,
+    pub camera_down: bool,
 }
 
 #[derive(Resource, Default)]
@@ -70,6 +72,10 @@ fn handle_key_input(
     input.weapon_switch_1 = keyboard.just_pressed(KeyCode::Digit1);
     input.weapon_switch_2 = keyboard.just_pressed(KeyCode::Digit2);
     input.weapon_switch_3 = keyboard.just_pressed(KeyCode::Digit3);
+
+    // Camera angle adjustment (Page Up/Page Down)
+    input.camera_up = keyboard.pressed(KeyCode::PageUp);
+    input.camera_down = keyboard.pressed(KeyCode::PageDown);
 }
 
 fn handle_mouse_input(

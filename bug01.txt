@@ -1,0 +1,958 @@
+   Compiling proc-macro2 v1.0.103
+   Compiling quote v1.0.42
+   Compiling unicode-ident v1.0.22
+   Compiling serde_core v1.0.228
+   Compiling cfg-if v1.0.4
+   Compiling equivalent v1.0.2
+   Compiling windows-link v0.2.1
+   Compiling serde v1.0.228
+   Compiling hashbrown v0.16.1
+   Compiling crossbeam-utils v0.8.21
+   Compiling zerocopy v0.8.31
+   Compiling pin-project-lite v0.2.16
+   Compiling allocator-api2 v0.2.21
+   Compiling once_cell v1.21.3
+   Compiling autocfg v1.5.0
+   Compiling libm v0.2.15
+   Compiling smallvec v1.15.1
+   Compiling version_check v0.9.5
+   Compiling arrayvec v0.7.6
+   Compiling winnow v0.7.14
+   Compiling toml_datetime v0.6.11
+   Compiling crunchy v0.2.4
+   Compiling unicode-xid v0.2.6
+   Compiling tiny-keccak v2.0.2
+   Compiling windows_x86_64_msvc v0.52.6
+   Compiling parking v2.2.1
+   Compiling getrandom v0.3.4
+   Compiling futures-core v0.3.31
+   Compiling typeid v1.0.3
+   Compiling fastrand v2.3.0
+   Compiling futures-io v0.3.31
+   Compiling getrandom v0.2.16
+   Compiling tracing-core v0.1.36
+   Compiling windows-sys v0.61.2
+   Compiling thread_local v1.1.9
+   Compiling erased-serde v0.4.9
+   Compiling downcast-rs v1.2.1
+   Compiling async-task v4.7.1
+   Compiling slab v0.4.11
+   Compiling fixedbitset v0.4.2
+   Compiling disqualified v1.0.0
+   Compiling bevy_ptr v0.15.3
+   Compiling indexmap v2.12.1
+   Compiling rand_core v0.6.4
+   Compiling uuid v1.12.1
+   Compiling futures-lite v2.6.1
+   Compiling log v0.4.29
+   Compiling nonmax v0.5.5
+   Compiling fixedbitset v0.5.7
+   Compiling thiserror v1.0.69
+   Compiling cfg_aliases v0.1.1
+   Compiling either v1.15.0
+   Compiling foldhash v0.1.5
+   Compiling memchr v2.7.6
+   Compiling khronos_api v3.1.0
+   Compiling libc v0.2.178
+   Compiling parking_lot_core v0.9.12
+   Compiling scopeguard v1.2.0
+   Compiling xml-rs v0.8.28
+   Compiling naga v23.1.0
+   Compiling hashbrown v0.15.5
+   Compiling windows-targets v0.52.6
+   Compiling itertools v0.13.0
+   Compiling lock_api v0.4.14
+   Compiling rustc-hash v1.1.0
+   Compiling unicode-width v0.1.14
+   Compiling ahash v0.8.12
+   Compiling windows-result v0.2.0
+   Compiling windows-result v0.1.2
+   Compiling raw-window-handle v0.6.2
+   Compiling bit-vec v0.8.0
+   Compiling windows-strings v0.1.0
+   Compiling concurrent-queue v2.5.0
+   Compiling crossbeam-channel v0.5.15
+   Compiling typewit v1.14.2
+   Compiling find-msvc-tools v0.1.5
+   Compiling shlex v1.3.0
+   Compiling bit-set v0.8.0
+   Compiling const-random-macro v0.1.16
+   Compiling libloading v0.8.9
+   Compiling hexf-parse v0.2.1
+   Compiling num-traits v0.2.19
+   Compiling event-listener v5.4.1
+   Compiling async-executor v1.13.3
+   Compiling ctrlc v3.5.1
+   Compiling winapi-util v0.1.11
+   Compiling parking_lot v0.12.5
+   Compiling ash v0.38.0+1.3.281
+   Compiling syn v2.0.111
+   Compiling tinyvec_macros v0.1.1
+   Compiling const_panic v0.2.15
+   Compiling event-listener-strategy v0.5.4
+   Compiling termcolor v1.4.1
+   Compiling cc v1.2.50
+   Compiling toml_edit v0.22.27
+   Compiling atomic-waker v1.1.2
+   Compiling crc32fast v1.5.0
+   Compiling khronos-egl v6.0.0
+   Compiling static_assertions v1.1.0
+   Compiling async-channel v2.5.0
+   Compiling simd-adler32 v0.3.8
+   Compiling gl_generator v0.14.0
+   Compiling piper v0.2.4
+   Compiling tinyvec v1.10.0
+   Compiling codespan-reporting v0.11.1
+   Compiling bevy_tasks v0.15.3
+   Compiling aho-corasick v1.1.4
+   Compiling wgpu-hal v23.0.1
+   Compiling adler2 v2.0.1
+   Compiling regex-syntax v0.8.8
+   Compiling presser v0.3.1
+   Compiling const-random v0.1.18
+   Compiling miniz_oxide v0.8.9
+   Compiling blocking v1.6.2
+   Compiling async-lock v3.4.2
+   Compiling wgpu-core v23.0.1
+   Compiling event-listener v2.5.3
+   Compiling range-alloc v0.1.4
+   Compiling accesskit v0.17.1
+   Compiling litrs v1.0.0
+   Compiling glow v0.14.2
+   Compiling profiling v1.0.17
+   Compiling base64 v0.21.7
+   Compiling renderdoc-sys v1.1.0
+   Compiling arrayref v0.3.9
+   Compiling constant_time_eq v0.3.1
+   Compiling async-fs v2.2.0
+   Compiling flate2 v1.1.5
+   Compiling bitflags v2.10.0
+   Compiling async-broadcast v0.5.1
+   Compiling ppv-lite86 v0.2.21
+   Compiling spirv v0.3.0+sdk-1.3.268.0
+   Compiling gpu-descriptor-types v0.2.0
+   Compiling gpu-alloc-types v0.3.0
+   Compiling wgpu-types v23.0.0
+   Compiling gpu-descriptor v0.3.2
+   Compiling gpu-alloc v0.6.0
+   Compiling rand_chacha v0.3.1
+   Compiling stackfuture v0.3.1
+   Compiling fdeflate v0.3.7
+   Compiling wgpu v23.0.1
+   Compiling atomicow v1.1.0
+   Compiling pxfm v0.1.27
+   Compiling winapi v0.3.9
+   Compiling twox-hash v1.6.3
+   Compiling byteorder-lite v0.1.0
+   Compiling ntapi v0.4.2
+   Compiling rand v0.8.5
+   Compiling bitflags v1.3.2
+   Compiling png v0.18.0
+   Compiling const_soft_float v0.1.4
+   Compiling bit-vec v0.6.3
+   Compiling ruzstd v0.7.3
+   Compiling ktx2 v0.3.0
+   Compiling data-encoding v2.9.0
+   Compiling const-fnv1a-hash v1.1.0
+   Compiling bit-set v0.5.3
+   Compiling offset-allocator v0.2.0
+   Compiling document-features v0.2.12
+   Compiling byteorder v1.5.0
+   Compiling regex-automata v0.4.13
+   Compiling paste v1.0.15
+   Compiling crossbeam-epoch v0.9.18
+   Compiling windows-strings v0.5.1
+   Compiling constgebra v0.1.4
+   Compiling rand_distr v0.4.3
+   Compiling windows-result v0.4.1
+   Compiling crossbeam-deque v0.8.6
+   Compiling slotmap v1.1.1
+   Compiling radsort v0.1.1
+   Compiling lazy_static v1.5.0
+   Compiling unicode-segmentation v1.12.0
+   Compiling rayon-core v1.13.0
+   Compiling euclid v0.22.11
+   Compiling sharded-slab v0.1.7
+   Compiling approx v0.5.1
+   Compiling nu-ansi-term v0.50.3
+   Compiling tracing-log v0.2.0
+   Compiling windows-threading v0.2.1
+   Compiling svg_fmt v0.4.5
+   Compiling serde_json v1.0.147
+   Compiling cfg_aliases v0.2.1
+   Compiling winit v0.30.12
+   Compiling windows-core v0.54.0
+   Compiling immutable-chunkmap v2.1.2
+   Compiling glutin_wgl_sys v0.6.1
+   Compiling inflections v1.1.1
+   Compiling yazi v0.1.6
+   Compiling ttf-parser v0.20.0
+   Compiling rectangle-pack v0.4.2
+   Compiling guillotiere v0.6.2
+   Compiling unicode-script v0.5.8
+   Compiling unicode-bidi-mirroring v0.2.0
+   Compiling cpal v0.15.3
+   Compiling zmij v0.1.7
+   Compiling zeno v0.2.3
+   Compiling unicode-properties v0.1.4
+   Compiling bevy_macro_utils v0.15.3
+   Compiling encase_derive_impl v0.10.0
+   Compiling ttf-parser v0.21.1
+   Compiling itoa v1.0.16
+   Compiling unicode-ccc v0.2.0
+   Compiling memmap2 v0.9.9
+   Compiling windows v0.54.0
+   Compiling rayon v1.11.0
+   Compiling accesskit_consumer v0.26.0
+   Compiling ogg v0.8.0
+   Compiling matrixmultiply v0.3.10
+   Compiling windows-sys v0.52.0
+   Compiling cursor-icon v1.2.0
+   Compiling heapless v0.8.0
+   Compiling gilrs v0.11.0
+   Compiling unicode-bidi v0.3.18
+   Compiling dpi v0.1.2
+   Compiling unicode-linebreak v0.1.5
+   Compiling sys-locale v0.3.2
+   Compiling typenum v1.19.0
+   Compiling self_cell v1.2.1
+   Compiling dasp_sample v0.11.0
+   Compiling rangemap v1.7.1
+   Compiling lewton v0.10.2
+   Compiling hash32 v0.3.1
+   Compiling num-integer v0.1.46
+   Compiling num-complex v0.4.6
+   Compiling rawpointer v0.2.1
+   Compiling grid v0.14.0
+   Compiling vec_map v0.8.2
+   Compiling fnv v1.0.7
+   Compiling stable_deref_trait v1.2.1
+   Compiling taffy v0.5.2
+   Compiling num-rational v0.4.2
+   Compiling percent-encoding v2.3.2
+   Compiling regex v1.12.2
+   Compiling matchers v0.2.0
+   Compiling robust v1.2.0
+   Compiling base64 v0.22.1
+   Compiling fontdb v0.16.2
+   Compiling moxcms v0.7.11
+   Compiling spade v2.15.0
+   Compiling rstar v0.12.2
+   Compiling ordered-float v4.6.0
+   Compiling crossbeam-queue v0.3.12
+   Compiling blake3 v1.8.2
+   Compiling ena v0.14.3
+   Compiling rustc-hash v2.1.1
+   Compiling crossbeam v0.8.4
+   Compiling bit-vec v0.7.0
+   Compiling bytemuck_derive v1.10.2
+   Compiling serde_derive v1.0.228
+   Compiling tracing-attributes v0.1.31
+   Compiling bevy_utils_proc_macros v0.15.3
+   Compiling derive_more-impl v1.0.0
+   Compiling bevy_reflect_derive v0.15.3
+   Compiling assert_type_match v0.1.1
+   Compiling bevy_ecs_macros v0.15.3
+   Compiling bevy_derive v0.15.3
+   Compiling thiserror-impl v1.0.69
+   Compiling windows-interface v0.58.0
+   Compiling windows-implement v0.58.0
+   Compiling bevy_asset_macros v0.15.3
+   Compiling encase_derive v0.10.0
+   Compiling windows-interface v0.57.0
+   Compiling windows-implement v0.57.0
+   Compiling bevy_encase_derive v0.15.3
+   Compiling bevy_render_macros v0.15.3
+   Compiling windows-interface v0.59.3
+   Compiling windows-implement v0.60.2
+   Compiling gltf-derive v1.4.1
+   Compiling nalgebra-macros v0.2.2
+   Compiling bevy_state_macros v0.15.3
+   Compiling bevy_gizmos_macros v0.15.3
+   Compiling num-derive v0.4.2
+   Compiling windows-core v0.58.0
+   Compiling windows-core v0.57.0
+   Compiling windows v0.58.0
+   Compiling windows v0.57.0
+   Compiling windows-core v0.62.2
+   Compiling rodio v0.19.0
+   Compiling tracing v0.1.44
+   Compiling bytemuck v1.24.0
+   Compiling tracing-subscriber v0.3.22
+   Compiling image v0.25.9
+   Compiling font-types v0.7.3
+   Compiling windows-collections v0.3.2
+   Compiling read-fonts v0.22.7
+   Compiling windows-future v0.3.2
+   Compiling windows-numerics v0.3.1
+   Compiling rustybuzz v0.14.1
+   Compiling safe_arch v0.7.4
+   Compiling windows v0.62.2
+   Compiling wide v0.7.33
+   Compiling glam v0.29.3
+   Compiling smol_str v0.2.2
+   Compiling hashbrown v0.14.5
+   Compiling petgraph v0.6.5
+   Compiling ron v0.8.1
+   Compiling gltf-json v1.4.1
+   Compiling derive_more v1.0.0
+   Compiling bevy_utils v0.15.3
+   Compiling gilrs-core v0.6.6
+   Compiling simba v0.9.1
+   Compiling gltf v1.4.1
+   Compiling naga_oil v0.16.0
+   Compiling skrifa v0.22.3
+   Compiling bevy_reflect v0.15.3
+   Compiling encase v0.10.0
+   Compiling bevy_mikktspace v0.15.3
+   Compiling hexasphere v15.1.0
+   Compiling nalgebra v0.33.2
+   Compiling swash v0.1.19
+   Compiling sysinfo v0.32.1
+   Compiling bevy_ecs v0.15.4
+   Compiling bevy_math v0.15.3
+   Compiling gpu-allocator v0.27.0
+   Compiling accesskit_windows v0.24.1
+   Compiling cosmic-text v0.12.1
+   Compiling accesskit_winit v0.23.1
+   Compiling parry3d v0.17.6
+   Compiling bevy_color v0.15.4
+   Compiling rapier3d v0.22.0
+   Compiling bevy_app v0.15.3
+   Compiling bevy_core v0.15.3
+   Compiling bevy_asset v0.15.3
+   Compiling bevy_a11y v0.15.3
+   Compiling bevy_time v0.15.3
+   Compiling bevy_log v0.15.3
+   Compiling bevy_hierarchy v0.15.3
+   Compiling bevy_input v0.15.3
+   Compiling bevy_transform v0.15.3
+   Compiling bevy_diagnostic v0.15.3
+   Compiling bevy_state v0.15.3
+   Compiling bevy_window v0.15.3
+   Compiling bevy_gilrs v0.15.3
+   Compiling bevy_image v0.15.3
+   Compiling bevy_mesh v0.15.3
+   Compiling bevy_audio v0.15.3
+   Compiling bevy_winit v0.15.3
+   Compiling bevy_render v0.15.3
+   Compiling bevy_core_pipeline v0.15.3
+   Compiling bevy_picking v0.15.3
+   Compiling bevy_animation v0.15.3
+   Compiling bevy_scene v0.15.3
+   Compiling bevy_sprite v0.15.3
+   Compiling bevy_pbr v0.15.3
+   Compiling bevy_text v0.15.3
+   Compiling bevy_ui v0.15.3
+   Compiling bevy_gltf v0.15.3
+   Compiling bevy_gizmos v0.15.3
+   Compiling bevy_internal v0.15.3
+   Compiling bevy v0.15.3
+   Compiling bevy_rapier3d v0.28.0
+   Compiling vibe_dragon_game v0.1.0 (W:\vibe_dragon_game)
+error[E0433]: failed to resolve: use of unresolved module or unlinked crate `glam`
+   --> src\vehicle.rs:206:58
+    |
+206 |             turret_transform.rotation = Quat::from_mat3(&glam::Mat3::from_cols(
+    |                                                          ^^^^ use of unresolved module or unlinked crate `glam`
+    |
+    = help: if you wanted to use a crate named `glam`, use `cargo add glam` to add it to your `Cargo.toml`
+help: consider importing one of these structs
+    |
+  1 + use crate::Mat3;
+    |
+  1 + use bevy::prelude::Mat3;
+    |
+help: if you import `Mat3`, refer to it directly
+    |
+206 -             turret_transform.rotation = Quat::from_mat3(&glam::Mat3::from_cols(
+206 +             turret_transform.rotation = Quat::from_mat3(&Mat3::from_cols(
+    |
+
+error[E0422]: cannot find struct, variant or union type `Ray` in this scope
+   --> src\weapon.rs:133:15
+    |
+133 |     let ray = Ray {
+    |               ^^^ not found in this scope
+
+error[E0422]: cannot find struct, variant or union type `RenderPlugin` in this scope
+  --> src\main.rs:30:41
+   |
+30 |         .add_plugins(DefaultPlugins.set(RenderPlugin {
+   |                                         ^^^^^^^^^^^^ help: a struct with a similar name exists: `WindowPlugin`
+   |
+  ::: C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_window-0.15.3\src\lib.rs:63:1
+   |
+63 | pub struct WindowPlugin {
+   | ----------------------- similarly named struct `WindowPlugin` defined here
+
+error[E0422]: cannot find struct, variant or union type `WgpuSettings` in this scope
+  --> src\main.rs:31:56
+   |
+31 |             render_creation: RenderCreation::Automatic(WgpuSettings {
+   |                                                        ^^^^^^^^^^^^ not found in this scope
+
+error[E0422]: cannot find struct, variant or union type `FogSettings` in this scope
+  --> src\main.rs:81:30
+   |
+81 |     commands.insert_resource(FogSettings {
+   |                              ^^^^^^^^^^^ not found in this scope
+
+warning: unused import: `bevy::window::CursorGrabMode`
+ --> src\main.rs:2:5
+  |
+2 | use bevy::window::CursorGrabMode;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `DinoHealth` and `Dinosaur`
+ --> src\weapon.rs:3:19
+  |
+3 | use crate::dino::{Dinosaur, DinoHealth, BodyPart, HitBox};
+  |                   ^^^^^^^^  ^^^^^^^^^^
+
+warning: use of deprecated type alias `bevy::prelude::PbrBundle`: Use the `Mesh3d` and `MeshMaterial3d` components instead. Inserting them will now also insert the other components required by them automatically.
+  --> src\weapon.rs:94:9
+   |
+94 |         PbrBundle {
+   |         ^^^^^^^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated type alias `bevy::prelude::PbrBundle`: Use the `Mesh3d` and `MeshMaterial3d` components instead. Inserting them will now also insert the other components required by them automatically.
+   --> src\weapon.rs:217:13
+    |
+217 |             PbrBundle {
+    |             ^^^^^^^^^
+
+error[E0277]: `bevy_rapier3d::plugin::RapierContext` is not a `Resource`
+   --> src\weapon.rs:61:21
+    |
+ 61 |     rapier_context: Res<RapierContext>,
+    |                     ^^^^^^^^^^^^^^^^^^ invalid `Resource`
+    |
+    = help: the trait `bevy::prelude::Resource` is not implemented for `bevy_rapier3d::plugin::RapierContext`
+    = note: consider annotating `bevy_rapier3d::plugin::RapierContext` with `#[derive(Resource)]`
+    = help: the following other types implement trait `bevy::prelude::Resource`:
+              AccessibilityRequested
+              AccumulatedMouseMotion
+              AccumulatedMouseScroll
+              AppTypeRegistry
+              AssetProcessor
+              AssetServer
+              AssetSourceBuilders
+              BatchedInstanceBuffer<BD>
+            and 188 others
+note: required by a bound in `bevy::prelude::Res`
+   --> C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_ecs-0.15.4\src\change_detection.rs:550:32
+    |
+550 | pub struct Res<'w, T: ?Sized + Resource> {
+    |                                ^^^^^^^^ required by this bound in `Res`
+
+error[E0559]: variant `bevy::prelude::Projection::Perspective` has no field named `fov`
+   --> src\camera.rs:23:13
+    |
+ 23 |             fov: 60.0_f32.to_radians(),
+    |             ^^^ field does not exist
+    |
+   ::: C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_render-0.15.3\src\camera\projection.rs:102:5
+    |
+102 |     Perspective(PerspectiveProjection),
+    |     ----------- `bevy::prelude::Projection::Perspective` defined here
+    |
+help: `bevy::prelude::Projection::Perspective` is a tuple variant, use the appropriate syntax
+    |
+ 22 -         Projection::Perspective {
+ 23 -             fov: 60.0_f32.to_radians(),
+ 24 -             ..default()
+ 25 -         },
+ 22 +         Projection::Perspective(/* PerspectiveProjection */),
+    |
+
+error[E0433]: failed to resolve: use of undeclared type `Mass`
+  --> src\vehicle.rs:50:9
+   |
+50 |         Mass::new(1500.0),
+   |         ^^^^ use of undeclared type `Mass`
+   |
+help: there is an enum variant `bevy_rapier3d::prelude::AdditionalMassProperties::Mass` and 4 others; try using the variant's enum
+   |
+50 -         Mass::new(1500.0),
+50 +         bevy_rapier3d::prelude::AdditionalMassProperties::new(1500.0),
+   |
+50 -         Mass::new(1500.0),
+50 +         bevy_rapier3d::prelude::ColliderMassProperties::new(1500.0),
+   |
+50 -         Mass::new(1500.0),
+50 +         crate::AdditionalMassProperties::new(1500.0),
+   |
+50 -         Mass::new(1500.0),
+50 +         crate::ColliderMassProperties::new(1500.0),
+   |
+
+error[E0423]: cannot initialize a tuple struct which contains private fields
+  --> src\vehicle.rs:58:9
+   |
+58 |         Parent(vehicle_entity),
+   |         ^^^^^^
+   |
+note: constructor is not visible here due to private fields
+  --> C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_hierarchy-0.15.3\src\components\parent.rs:41:19
+   |
+41 | pub struct Parent(pub(crate) Entity);
+   |                   ^^^^^^^^^^^^^^^^^ private field
+
+error[E0423]: cannot initialize a tuple struct which contains private fields
+  --> src\vehicle.rs:66:9
+   |
+66 |         Parent(vehicle_entity),
+   |         ^^^^^^
+   |
+note: constructor is not visible here due to private fields
+  --> C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_hierarchy-0.15.3\src\components\parent.rs:41:19
+   |
+41 | pub struct Parent(pub(crate) Entity);
+   |                   ^^^^^^^^^^^^^^^^^ private field
+
+error[E0423]: cannot initialize a tuple struct which contains private fields
+  --> src\vehicle.rs:83:13
+   |
+83 |             Parent(vehicle_entity),
+   |             ^^^^^^
+   |
+note: constructor is not visible here due to private fields
+  --> C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_hierarchy-0.15.3\src\components\parent.rs:41:19
+   |
+41 | pub struct Parent(pub(crate) Entity);
+   |                   ^^^^^^^^^^^^^^^^^ private field
+
+error[E0423]: cannot initialize a tuple struct which contains private fields
+  --> src\vehicle.rs:92:9
+   |
+92 |         Parent(vehicle_entity),
+   |         ^^^^^^
+   |
+note: constructor is not visible here due to private fields
+  --> C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_hierarchy-0.15.3\src\components\parent.rs:41:19
+   |
+41 | pub struct Parent(pub(crate) Entity);
+   |                   ^^^^^^^^^^^^^^^^^ private field
+
+error[E0423]: cannot initialize a tuple struct which contains private fields
+   --> src\vehicle.rs:102:9
+    |
+102 |         Parent(vehicle_entity),
+    |         ^^^^^^
+    |
+note: constructor is not visible here due to private fields
+   --> C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_hierarchy-0.15.3\src\components\parent.rs:41:19
+    |
+ 41 | pub struct Parent(pub(crate) Entity);
+    |                   ^^^^^^^^^^^^^^^^^ private field
+
+error[E0599]: no method named `delta_seconds` found for struct `bevy::prelude::Res<'_, bevy::prelude::Time>` in the current scope
+   --> src\vehicle.rs:118:19
+    |
+118 |     let dt = time.delta_seconds();
+    |                   ^^^^^^^^^^^^^
+    |
+help: there is a method `delta_secs` with a similar name
+    |
+118 -     let dt = time.delta_seconds();
+118 +     let dt = time.delta_secs();
+    |
+
+error[E0308]: mismatched types
+   --> src\vehicle.rs:184:9
+    |
+184 |     let Some(ray) = camera.viewport_to_world(camera_transform, cursor_pos) else {
+    |         ^^^^^^^^^   ------------------------------------------------------ this expression has type `Result<Ray3d, ViewportConversionError>`
+    |         |
+    |         expected `Result<Ray3d, ViewportConversionError>`, found `Option<_>`
+    |
+    = note: expected enum `Result<Ray3d, ViewportConversionError>`
+               found enum `std::option::Option<_>`
+
+error[E0689]: can't call method `abs` on ambiguous numeric type `{float}`
+  --> src\dino.rs:81:14
+   |
+81 |         if x.abs() < 20.0 && z.abs() < 20.0 {
+   |              ^^^
+   |
+help: you must specify a type for this binding, like `f32`
+   |
+77 |         let x: f32 = rng.gen_range(-150.0..150.0);
+   |              +++++
+
+error[E0689]: can't call method `abs` on ambiguous numeric type `{float}`
+  --> src\dino.rs:81:32
+   |
+81 |         if x.abs() < 20.0 && z.abs() < 20.0 {
+   |                                ^^^
+   |
+help: you must specify a type for this binding, like `f32`
+   |
+78 |         let z: f32 = rng.gen_range(-150.0..150.0);
+   |              +++++
+
+error[E0423]: cannot initialize a tuple struct which contains private fields
+   --> src\dino.rs:131:9
+    |
+131 |         Parent(dino_entity),
+    |         ^^^^^^
+    |
+note: constructor is not visible here due to private fields
+   --> C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_hierarchy-0.15.3\src\components\parent.rs:41:19
+    |
+ 41 | pub struct Parent(pub(crate) Entity);
+    |                   ^^^^^^^^^^^^^^^^^ private field
+
+error[E0423]: cannot initialize a tuple struct which contains private fields
+   --> src\dino.rs:147:9
+    |
+147 |         Parent(dino_entity),
+    |         ^^^^^^
+    |
+note: constructor is not visible here due to private fields
+   --> C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_hierarchy-0.15.3\src\components\parent.rs:41:19
+    |
+ 41 | pub struct Parent(pub(crate) Entity);
+    |                   ^^^^^^^^^^^^^^^^^ private field
+
+error[E0423]: cannot initialize a tuple struct which contains private fields
+   --> src\dino.rs:169:13
+    |
+169 |             Parent(dino_entity),
+    |             ^^^^^^
+    |
+note: constructor is not visible here due to private fields
+   --> C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_hierarchy-0.15.3\src\components\parent.rs:41:19
+    |
+ 41 | pub struct Parent(pub(crate) Entity);
+    |                   ^^^^^^^^^^^^^^^^^ private field
+
+error[E0599]: no method named `delta_seconds` found for struct `bevy::prelude::Res<'_, bevy::prelude::Time>` in the current scope
+   --> src\dino.rs:221:19
+    |
+221 |     let dt = time.delta_seconds();
+    |                   ^^^^^^^^^^^^^
+    |
+help: there is a method `delta_secs` with a similar name
+    |
+221 -     let dt = time.delta_seconds();
+221 +     let dt = time.delta_secs();
+    |
+
+error[E0277]: `(..., ..., ...)` does not describe a valid system configuration
+   --> src\weapon.rs:44:34
+    |
+ 44 |               .add_systems(Update, (
+    |  ______________-----------_________^
+    | |              |
+    | |              required by a bound introduced by this call
+ 45 | |                 handle_shooting,
+ 46 | |                 update_bullets,
+ 47 | |                 update_blood_particles,
+ 48 | |             ));
+    | |_____________^ invalid system configuration
+    |
+    = help: the trait `IntoSystemConfigs<_>` is not implemented for `(..., ..., ...)`
+    = help: the following other types implement trait `IntoSystemConfigs<Marker>`:
+              `(S,)` implements `IntoSystemConfigs<(SystemConfigTupleMarker, P)>`
+              `(S0, S1)` implements `IntoSystemConfigs<(SystemConfigTupleMarker, P0, P1)>`
+              `(S0, S1, S2)` implements `IntoSystemConfigs<(SystemConfigTupleMarker, P0, P1, P2)>`
+              `(S0, S1, S2, S3)` implements `IntoSystemConfigs<(SystemConfigTupleMarker, P0, P1, P2, P3)>`
+              `(S0, S1, S2, S3, S4)` implements `IntoSystemConfigs<(SystemConfigTupleMarker, P0, P1, P2, P3, P4)>`
+              `(S0, S1, S2, S3, S4, S5)` implements `IntoSystemConfigs<(SystemConfigTupleMarker, P0, P1, P2, P3, P4, P5)>`
+              `(S0, S1, S2, S3, S4, S5, S6)` implements `IntoSystemConfigs<(SystemConfigTupleMarker, P0, P1, P2, P3, P4, P5, P6)>`
+              `(S0, S1, S2, S3, S4, S5, S6, S7)` implements `IntoSystemConfigs<(SystemConfigTupleMarker, P0, P1, P2, P3, P4, P5, P6, P7)>`
+            and 12 others
+note: required by a bound in `bevy::prelude::App::add_systems`
+   --> C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_app-0.15.3\src\app.rs:288:23
+    |
+285 |     pub fn add_systems<M>(
+    |            ----------- required by a bound in this associated function
+...
+288 |         systems: impl IntoSystemConfigs<M>,
+    |                       ^^^^^^^^^^^^^^^^^^^^ required by this bound in `App::add_systems`
+    = note: the full name for the type has been written to 'W:\vibe_dragon_game\target\debug\deps\vibe_dragon_game.long-type-9541102821098958729.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+error[E0599]: no method named `elapsed_seconds` found for struct `bevy::prelude::Res<'_, bevy::prelude::Time>` in the current scope
+  --> src\weapon.rs:64:29
+   |
+64 |     let current_time = time.elapsed_seconds();
+   |                             ^^^^^^^^^^^^^^^
+   |
+help: there is a method `elapsed_secs` with a similar name
+   |
+64 -     let current_time = time.elapsed_seconds();
+64 +     let current_time = time.elapsed_secs();
+   |
+
+warning: use of deprecated field `bevy::prelude::MaterialMeshBundle::mesh`: Use the `Mesh3d` and `MeshMaterial3d` components instead. Inserting them will now also insert the other components required by them automatically.
+  --> src\weapon.rs:95:13
+   |
+95 |             mesh: meshes.add(Sphere { radius: 0.08 }),
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+  --> src\weapon.rs:95:19
+   |
+95 |             mesh: meshes.add(Sphere { radius: 0.08 }),
+   |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Mesh3d`, found `Handle<Mesh>`
+   |
+   = note: expected struct `bevy::prelude::Mesh3d`
+                found enum `bevy::prelude::Handle<bevy::prelude::Mesh>`
+help: try wrapping the expression in `bevy::prelude::Mesh3d`
+   |
+95 |             mesh: bevy::prelude::Mesh3d(meshes.add(Sphere { radius: 0.08 })),
+   |                   ++++++++++++++++++++++                                   +
+
+warning: use of deprecated field `bevy::prelude::MaterialMeshBundle::material`: Use the `Mesh3d` and `MeshMaterial3d` components instead. Inserting them will now also insert the other components required by them automatically.
+  --> src\weapon.rs:96:13
+   |
+96 |             material: materials.add(Color::srgb(1.0, 0.8, 0.2)),
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+  --> src\weapon.rs:96:23
+   |
+96 |             material: materials.add(Color::srgb(1.0, 0.8, 0.2)),
+   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `MeshMaterial3d<StandardMaterial>`, found `Handle<StandardMaterial>`
+   |
+   = note: expected struct `bevy::prelude::MeshMaterial3d<bevy::prelude::StandardMaterial>`
+                found enum `bevy::prelude::Handle<bevy::prelude::StandardMaterial>`
+help: try wrapping the expression in `bevy::prelude::MeshMaterial3d`
+   |
+96 |             material: bevy::prelude::MeshMaterial3d(materials.add(Color::srgb(1.0, 0.8, 0.2))),
+   |                       ++++++++++++++++++++++++++++++                                         +
+
+warning: use of deprecated field `bevy::prelude::MaterialMeshBundle::transform`: Use the `Mesh3d` and `MeshMaterial3d` components instead. Inserting them will now also insert the other components required by them automatically.
+  --> src\weapon.rs:97:13
+   |
+97 |             transform: Transform::from_translation(bullet_origin),
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0308]: arguments to this function are incorrect
+   --> src\weapon.rs:107:38
+    |
+107 |     if let Some((entity, hit_pos)) = cast_ray(&rapier_context, bullet_origin, fire_direction, max_dist) {
+    |                                      ^^^^^^^^                                 -------------- expected `Vec3`, found `Dir3`
+    |
+note: expected `&RapierContext`, found `&Res<'_, RapierContext>`
+   --> src\weapon.rs:107:47
+    |
+107 |     if let Some((entity, hit_pos)) = cast_ray(&rapier_context, bullet_origin, fire_direction, max_dist) {
+    |                                               ^^^^^^^^^^^^^^^
+    = note: expected reference `&bevy_rapier3d::plugin::RapierContext`
+               found reference `&bevy::prelude::Res<'_, bevy_rapier3d::plugin::RapierContext>`
+note: function defined here
+   --> src\weapon.rs:127:4
+    |
+127 | fn cast_ray(
+    |    ^^^^^^^^
+128 |     rapier_context: &RapierContext,
+    |     ------------------------------
+129 |     origin: Vec3,
+130 |     direction: Vec3,
+    |     ---------------
+help: consider dereferencing the type
+    |
+107 |     if let Some((entity, hit_pos)) = cast_ray(&rapier_context, bullet_origin, *fire_direction, max_dist) {
+    |                                                                               +
+
+error[E0599]: no method named `cast_rayAndGetNormal` found for reference `&bevy_rapier3d::plugin::RapierContext` in the current scope
+   --> src\weapon.rs:138:20
+    |
+138 |     rapier_context.cast_rayAndGetNormal(
+    |     ---------------^^^^^^^^^^^^^^^^^^^^
+    |
+help: there is a method `cast_ray_and_get_normal` with a similar name
+    |
+138 -     rapier_context.cast_rayAndGetNormal(
+138 +     rapier_context.cast_ray_and_get_normal(
+    |
+
+error[E0599]: no method named `get` found for struct `EntityCommands<'a>` in the current scope
+   --> src\weapon.rs:155:48
+    |
+155 |         if let Some(hit_box) = entity_commands.get::<HitBox>() {
+    |                                                ^^^ method not found in `EntityCommands<'_>`
+
+error[E0599]: no method named `get` found for struct `EntityCommands<'a>` in the current scope
+   --> src\weapon.rs:157:51
+    |
+157 |             if let Some(parent) = entity_commands.get::<Parent>() {
+    |                                                   ^^^ method not found in `EntityCommands<'_>`
+
+error[E0599]: no method named `delta_seconds` found for struct `bevy::prelude::Res<'_, bevy::prelude::Time>` in the current scope
+   --> src\weapon.rs:188:57
+    |
+188 |         transform.translation += forward * 100.0 * time.delta_seconds();
+    |                                                         ^^^^^^^^^^^^^
+    |
+help: there is a method `delta_secs` with a similar name
+    |
+188 -         transform.translation += forward * 100.0 * time.delta_seconds();
+188 +         transform.translation += forward * 100.0 * time.delta_secs();
+    |
+
+warning: use of deprecated field `bevy::prelude::MaterialMeshBundle::mesh`: Use the `Mesh3d` and `MeshMaterial3d` components instead. Inserting them will now also insert the other components required by them automatically.
+   --> src\weapon.rs:218:17
+    |
+218 |                 mesh: meshes.add(Sphere { radius: 0.08 }),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+   --> src\weapon.rs:218:23
+    |
+218 |                 mesh: meshes.add(Sphere { radius: 0.08 }),
+    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Mesh3d`, found `Handle<Mesh>`
+    |
+    = note: expected struct `bevy::prelude::Mesh3d`
+                 found enum `bevy::prelude::Handle<bevy::prelude::Mesh>`
+help: try wrapping the expression in `bevy::prelude::Mesh3d`
+    |
+218 |                 mesh: bevy::prelude::Mesh3d(meshes.add(Sphere { radius: 0.08 })),
+    |                       ++++++++++++++++++++++                                   +
+
+warning: use of deprecated field `bevy::prelude::MaterialMeshBundle::material`: Use the `Mesh3d` and `MeshMaterial3d` components instead. Inserting them will now also insert the other components required by them automatically.
+   --> src\weapon.rs:219:17
+    |
+219 |                 material: blood_material.clone(),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+   --> src\weapon.rs:219:27
+    |
+219 |                 material: blood_material.clone(),
+    |                           ^^^^^^^^^^^^^^^^^^^^^^ expected `MeshMaterial3d<StandardMaterial>`, found `Handle<StandardMaterial>`
+    |
+    = note: expected struct `bevy::prelude::MeshMaterial3d<bevy::prelude::StandardMaterial>`
+                 found enum `bevy::prelude::Handle<bevy::prelude::StandardMaterial>`
+help: try wrapping the expression in `bevy::prelude::MeshMaterial3d`
+    |
+219 |                 material: bevy::prelude::MeshMaterial3d(blood_material.clone()),
+    |                           ++++++++++++++++++++++++++++++                      +
+
+warning: use of deprecated field `bevy::prelude::MaterialMeshBundle::transform`: Use the `Mesh3d` and `MeshMaterial3d` components instead. Inserting them will now also insert the other components required by them automatically.
+   --> src\weapon.rs:220:17
+    |
+220 |                 transform: Transform::from_translation(position + offset).with_scale(Vec3::splat(0.3)),
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0599]: no method named `delta_seconds` found for struct `bevy::prelude::Res<'_, bevy::prelude::Time>` in the current scope
+   --> src\weapon.rs:241:47
+    |
+241 |         transform.translation.y -= 9.8 * time.delta_seconds();
+    |                                               ^^^^^^^^^^^^^
+    |
+help: there is a method `delta_secs` with a similar name
+    |
+241 -         transform.translation.y -= 9.8 * time.delta_seconds();
+241 +         transform.translation.y -= 9.8 * time.delta_secs();
+    |
+
+error[E0308]: mismatched types
+   --> src\weapon.rs:244:58
+    |
+244 |         let scale = 1.0 - (particle.lifetime.elapsed() / particle.lifetime.duration());
+    |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `u32`, found `Duration`
+
+error[E0277]: cannot subtract `Duration` from `{float}`
+   --> src\weapon.rs:244:25
+    |
+244 |         let scale = 1.0 - (particle.lifetime.elapsed() / particle.lifetime.duration());
+    |                         ^ no implementation for `{float} - Duration`
+    |
+    = help: the trait `Sub<Duration>` is not implemented for `{float}`
+    = help: the following other types implement trait `Sub<Rhs>`:
+              `&f128` implements `Sub<f128>`
+              `&f128` implements `Sub`
+              `&f16` implements `Sub<f16>`
+              `&f16` implements `Sub`
+              `&f32` implements `Sub<&Complex<f32>>`
+              `&f32` implements `Sub<&Vec3A>`
+              `&f32` implements `Sub<&Vec4>`
+              `&f32` implements `Sub<&bevy::prelude::Vec2>`
+            and 267 others
+
+error[E0433]: failed to resolve: use of undeclared type `RenderCreation`
+  --> src\main.rs:31:30
+   |
+31 |             render_creation: RenderCreation::Automatic(WgpuSettings {
+   |                              ^^^^^^^^^^^^^^ use of undeclared type `RenderCreation`
+
+error[E0433]: failed to resolve: use of undeclared type `WgpuSettingsPriority`
+  --> src\main.rs:32:27
+   |
+32 |                 priority: WgpuSettingsPriority::Compatibility,
+   |                           ^^^^^^^^^^^^^^^^^^^^ use of undeclared type `WgpuSettingsPriority`
+
+error[E0061]: this function takes 1 argument but 2 arguments were supplied
+   --> src\main.rs:100:9
+    |
+100 |         Collider::halfspace(Vec3::Y, 0.0).unwrap(),
+    |         ^^^^^^^^^^^^^^^^^^^          --- unexpected argument #2 of type `{float}`
+    |
+note: associated function defined here
+   --> C:\Users\enthos\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\bevy_rapier3d-0.28.0\src\geometry\collider_impl.rs:46:12
+    |
+ 46 |     pub fn halfspace(outward_normal: Vect) -> Option<Self> {
+    |            ^^^^^^^^^
+help: remove the extra argument
+    |
+100 -         Collider::halfspace(Vec3::Y, 0.0).unwrap(),
+100 +         Collider::halfspace(Vec3::Y).unwrap(),
+    |
+
+warning: unused variable: `vehicle_forward`
+  --> src\camera.rs:42:9
+   |
+42 |     let vehicle_forward = vehicle_transform.forward();
+   |         ^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_vehicle_forward`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `time`
+   --> src\dino.rs:175:5
+    |
+175 |     time: Res<Time>,
+    |     ^^^^ help: if this is intentional, prefix it with an underscore: `_time`
+
+warning: unused variable: `transform`
+   --> src\dino.rs:256:26
+    |
+256 |     for (entity, health, transform) in dino_q.iter() {
+    |                          ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_transform`
+
+warning: unused variable: `commands`
+   --> src\ui.rs:114:9
+    |
+114 |     mut commands: Commands,
+    |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_commands`
+
+warning: variable does not need to be mutable
+   --> src\ui.rs:114:5
+    |
+114 |     mut commands: Commands,
+    |     ----^^^^^^^^
+    |     |
+    |     help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src\main.rs:184:72
+    |
+184 | fn update_score(mut score_text: Query<&mut Text, With<ui::ScoreText>>, mut score: ResMut<GameScore>) {
+    |                                                                        ----^^^^^
+    |                                                                        |
+    |                                                                        help: remove this `mut`
+
+Some errors have detailed explanations: E0061, E0277, E0308, E0422, E0423, E0433, E0559, E0599, E0689.
+For more information about an error, try `rustc --explain E0061`.
+warning: `vibe_dragon_game` (bin "vibe_dragon_game") generated 16 warnings
+error: could not compile `vibe_dragon_game` (bin "vibe_dragon_game") due to 38 previous errors; 16 warnings emitted

@@ -1,0 +1,126 @@
+================================================================================
+SESSION SUMMARY - Vibe Dragon Game Development
+Date: 2025-12-27
+================================================================================
+
+PROJECT: 3D Dinosaur Hunting Game (Bevy 0.15 + Rust)
+Location: W:\vibe_dragon_game
+
+================================================================================
+TASK COMPLETED: Camera System - Bird's Eye View with Adjustable Angle
+================================================================================
+
+User Request:
+"now default vision is see ground, should from sky see ground, pg up/dn to adjust camara angle"
+
+IMPLEMENTATION:
+- Changed default camera from ground-level view to bird's eye view (60 units high)
+- Added Page Up/Page Down key controls to adjust camera height and distance
+- Created CameraSettings resource for dynamic camera adjustment
+
+================================================================================
+FILES MODIFIED
+================================================================================
+
+1. src/input.rs
+   - Added camera_up and camera_down fields to PlayerInput struct (lines 25-26)
+   - Added PageUp/PageDown key bindings in handle_key_input() (lines 76-78)
+
+2. src/camera.rs
+   - Added CameraSettings resource with height, distance, angle parameters
+   - Default: height=60.0, distance=30.0, angle=60.0 degrees
+   - Added update_camera_settings() system for real-time adjustment
+   - Modified camera_follow() to use CameraSettings resource
+   - Height clamped: 10.0 - 150.0 units
+   - Distance clamped: 5.0 - 100.0 units
+
+================================================================================
+NEW CONTROLS
+================================================================================
+
+Page Up   - Raise camera (wider view, more distance from ground)
+Page Down - Lower camera (closer view, less distance from ground)
+
+================================================================================
+GAME FEATURES IMPLEMENTED
+================================================================================
+
+Core Systems:
+- Multi-weapon system (Machine Gun, Shotgun, Rocket Launcher)
+- 5 dinosaur species (Triceratops, Velociraptor, Brachiosaurus, Stegosaurus, T-Rex boss)
+- AI behavior (Roam, Flee, Attack states)
+- Hitbox system (Head, Body, Legs with damage multipliers)
+- Combo system with score multipliers
+- Coin economy
+- Vehicle health system
+- Time Attack mode
+- Main menu with game mode selection
+- Shop system for upgrades
+- Minimap showing player and enemies
+- Screen shake effects on kills
+- Damage popup feedback
+- Environment elements (water, obstacles)
+
+Controls:
+- WASD: Move vehicle
+- Mouse: Aim turret
+- Left Click: Fire weapon
+- Right Click: Lock target
+- Mouse Wheel: Switch weapons
+- 1/2/3: Select specific weapon
+- Q/E: Rotate turret
+- Page Up/Down: Adjust camera height/angle
+- Escape: Pause game
+- TAB: Open shop
+
+================================================================================
+BUILD STATUS
+================================================================================
+
+Status: SUCCESS
+Build: Completed in 39.30s (dev profile)
+Warnings: 25 (non-critical, mostly unused code)
+
+Hardware detected:
+- OS: Windows 10 Pro (19045)
+- CPU: AMD Ryzen 9 9950X 16-Core
+- GPU: NVIDIA GeForce RTX 5090 (Vulkan)
+- RAM: 189.6 GiB
+
+Game Status: RUNNING (exit code 0)
+
+================================================================================
+PREVIOUS BUGS FIXED
+================================================================================
+
+1. Bevy Query Conflict (B0001) - Fixed with ParamSet in dino.rs systems
+2. Division by Zero - Fixed empty vector guards in weapon_system.rs
+3. Commands.trigger() - Fixed by using EventWriter pattern
+
+================================================================================
+NEXT STEPS (Optional)
+================================================================================
+
+- Clean up unused code warnings (25 warnings)
+- Fix B0004 InheritedVisibility warnings (entity hierarchy issues)
+- Consider adding camera angle visualization to UI
+- Add sound effects system
+- Implement particle effects for explosions/blood
+
+================================================================================
+GIT STATUS
+================================================================================
+
+Current branch: main
+Untracked files:
+  - bug01.txt
+  - tall20260121.txt (this file)
+
+Recent commits:
+  - daa9059 First version.
+  - 2c855af Create design01.txt
+  - 4945b2d Initial commit
+
+================================================================================
+END OF SESSION SUMMARY
+================================================================================
